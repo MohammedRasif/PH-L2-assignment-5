@@ -2,27 +2,61 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image';
+import { logout } from "@/app/service/logout";
 
-function Navbar() {
+interface NavbarProps {
+  user?: any;
+}
+
+function Navbar({ user }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  const handleLogout = async () => {
+    const res = await logout();
+    if (res.success) {
+      window.location.href = "/login";
+    }
+  };
+
+  const getDashboardLink = (role?: string) => {
+    switch (role) {
+      case "ADMIN":
+        return "/admin-dashboard";
+      case "LANDLORD":
+        return "/landlord-dashboard";
+      case "TENANT":
+        return "/rental-dashboard";
+      default:
+        return "/";
+    }
+  };
+
+  // Get initials for profile fallback
+  const getInitials = (name?: string) => {
+    if (!name) return "U";
+    return name.charAt(0).toUpperCase();
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-100 bg-white/90 backdrop-blur-md">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
+          {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center gap-2 group">
-              <div className="flex   items-center justify-center  text-blue-600 transition-colors ">
-                 <Image
-                    src="/logo.svg"
-                    alt="Logo"
-                    width={130}
-                    height={130}
+              <div className="flex items-center justify-center text-blue-600 transition-colors">
+                <Image
+                  src="/logo.svg"
+                  alt="Logo"
+                  width={130}
+                  height={130}
+                  priority
                 />
               </div>
             </Link>
           </div>
 
+          {/* Desktop Navigation & Actions */}
           <div className="hidden md:flex items-center gap-6">
             <Link
               href="/properties"
@@ -74,22 +108,65 @@ function Navbar() {
               </svg>
             </button>
 
-            <div className="flex items-center gap-3">
-              <Link
-                href="/login"
-                className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all active:scale-95"
-              >
-                Login
-              </Link>
-              <Link
-                href="/register"
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95"
-              >
-                Register
-              </Link>
-            </div>
+            {/* Auth section */}
+            {user ? (
+              <div className="flex items-center gap-4">
+                <Link
+                  href={getDashboardLink(user.role)}
+                  className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors"
+                >
+                  Dashboard
+                </Link>
+                
+                {/* User avatar and name */}
+                <div className="flex items-center gap-2 border-l border-slate-200 pl-4">
+                  {user.profile?.profilePhoto ? (
+                    <img
+                      src={user.profile.profilePhoto}
+                      alt={user.name || "User Profile"}
+                      className="h-8 w-8 rounded-full object-cover ring-2 ring-blue-50"
+                    />
+                  ) : (
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-50 text-blue-600 font-bold text-sm ring-2 ring-blue-50">
+                      {getInitials(user.name)}
+                    </div>
+                  )}
+                  <div className="flex flex-col">
+                    <span className="text-xs font-semibold text-slate-800 leading-none">
+                      {user.name}
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-medium capitalize mt-0.5">
+                      {user.role?.toLowerCase()}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleLogout}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-red-600 hover:bg-slate-50 transition-all active:scale-95 cursor-pointer"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Link
+                  href="/login"
+                  className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all active:scale-95"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/register"
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95"
+                >
+                  Register
+                </Link>
+              </div>
+            )}
           </div>
 
+          {/* Hamburger Mobile Toggle */}
           <div className="flex md:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
@@ -127,10 +204,10 @@ function Navbar() {
         </div>
       </div>
 
+      {/* Mobile Menu */}
       {isOpen && (
         <div className="md:hidden border-t border-slate-100 bg-white" id="mobile-menu">
           <div className="space-y-1 px-4 pb-4 pt-3">
-            {/* Properties Link */}
             <Link
               href="/properties"
               className="block rounded-lg px-3 py-2 text-base font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-all"
@@ -184,22 +261,67 @@ function Navbar() {
 
             <div className="my-2 h-px bg-slate-100" />
 
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <Link
-                href="/login"
-                className="flex items-center justify-center rounded-lg border border-slate-200 px-4 py-2 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all"
-                onClick={() => setIsOpen(false)}
-              >
-                Login
-              </Link>
-              <Link
-                href="/register"
-                className="flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-all"
-                onClick={() => setIsOpen(false)}
-              >
-                Register
-              </Link>
-            </div>
+            {/* Mobile Auth section */}
+            {user ? (
+              <div className="space-y-3 pt-1 pb-2 px-3 bg-slate-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  {user.profile?.profilePhoto ? (
+                    <img
+                      src={user.profile.profilePhoto}
+                      alt={user.name || "User Profile"}
+                      className="h-10 w-10 rounded-full object-cover ring-2 ring-blue-50"
+                    />
+                  ) : (
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-bold text-sm ring-2 ring-blue-50">
+                      {getInitials(user.name)}
+                    </div>
+                  )}
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-slate-800">
+                      {user.name}
+                    </span>
+                    <span className="text-xs text-slate-500 capitalize">
+                      {user.role?.toLowerCase()}
+                    </span>
+                  </div>
+                </div>
+
+                <Link
+                  href={getDashboardLink(user.role)}
+                  className="block text-center rounded-lg bg-blue-50 text-blue-600 px-4 py-2 text-sm font-semibold hover:bg-blue-100 transition-all"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Go to Dashboard
+                </Link>
+
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    handleLogout();
+                  }}
+                  className="w-full text-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-red-600 hover:bg-slate-50 transition-all cursor-pointer"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <Link
+                  href="/login"
+                  className="flex items-center justify-center rounded-lg border border-slate-200 px-4 py-2 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/register"
+                  className="flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-all"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Register
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       )}
