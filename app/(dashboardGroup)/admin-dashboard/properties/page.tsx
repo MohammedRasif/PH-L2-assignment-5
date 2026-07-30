@@ -1,15 +1,15 @@
-import React from "react";
+import { getAdminProperties } from "@/app/service/adminService";
+import PropertyTableClient from "./PropertyTableClient";
 import { getMe } from "@/app/service/getMe";
 import { redirect } from "next/navigation";
-import AdminOverviewClient from "./AdminOverviewClient";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default async function AdminDashboardPage() {
+export default async function ManagePropertiesPage() {
   const user = await getMe();
-
-  // Route security: Check if user is authenticated and has correct role
+  
+  // Security checks
   if (!user) {
     redirect("/login");
   }
@@ -19,6 +19,6 @@ export default async function AdminDashboardPage() {
   }
 
   return (
-    <AdminOverviewClient user={user} />
+    <PropertyTableClient />
   );
 }

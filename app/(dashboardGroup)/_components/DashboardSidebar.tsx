@@ -23,6 +23,7 @@ export default function DashboardSidebar({ user }: SidebarProps) {
           { name: "Overview", href: "/admin-dashboard", icon: "📊" },
           { name: "Manage Users", href: "/admin-dashboard/users", icon: "👥" },
           { name: "Manage Properties", href: "/admin-dashboard/properties", icon: "🏢" },
+          { name: "Manage Rentals", href: "/admin-dashboard/rentals", icon: "📬" },
           { name: "System Settings", href: "/admin-dashboard/settings", icon: "⚙️" },
         ];
       case "LANDLORD":
