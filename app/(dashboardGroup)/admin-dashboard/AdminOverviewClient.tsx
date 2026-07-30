@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { getAdminUsersAction, getAdminPropertiesAction, getAdminRentalsAction } from "./_actions/adminActions";
+import { Users, Building2, FileText, Banknote } from "lucide-react";
 
 interface AdminOverviewClientProps {
   user: any;
@@ -89,7 +90,9 @@ export default function AdminOverviewClient({ user }: AdminOverviewClientProps) 
           {/* Total Users */}
           <div className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
             <div className="flex items-center gap-4">
-              <span className="text-3xl bg-blue-50 p-2.5 rounded-xl">👥</span>
+              <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                <Users className="h-6 w-6" />
+              </div>
               <div>
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Users</p>
                 <h3 className="text-2xl font-bold text-slate-900 mt-1">{usersList.length}</h3>
@@ -103,7 +106,9 @@ export default function AdminOverviewClient({ user }: AdminOverviewClientProps) 
           {/* Total Properties */}
           <div className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
             <div className="flex items-center gap-4">
-              <span className="text-3xl bg-emerald-50 p-2.5 rounded-xl">🏡</span>
+              <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                <Building2 className="h-6 w-6" />
+              </div>
               <div>
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Properties</p>
                 <h3 className="text-2xl font-bold text-slate-900 mt-1">{propertiesList.length}</h3>
@@ -117,7 +122,9 @@ export default function AdminOverviewClient({ user }: AdminOverviewClientProps) 
           {/* Total Rentals */}
           <div className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
             <div className="flex items-center gap-4">
-              <span className="text-3xl bg-violet-50 p-2.5 rounded-xl">📜</span>
+              <div className="p-3 bg-violet-50 text-violet-600 rounded-xl">
+                <FileText className="h-6 w-6" />
+              </div>
               <div>
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Rental Requests</p>
                 <h3 className="text-2xl font-bold text-slate-900 mt-1">{rentalsList.length}</h3>
@@ -131,7 +138,9 @@ export default function AdminOverviewClient({ user }: AdminOverviewClientProps) 
           {/* Platform Earnings */}
           <div className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
             <div className="flex items-center gap-4">
-              <span className="text-3xl bg-amber-50 p-2.5 rounded-xl">৳</span>
+              <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                <Banknote className="h-6 w-6" />
+              </div>
               <div>
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Platform Earnings</p>
                 <h3 className="text-2xl font-bold text-slate-900 mt-1">৳ {platformEarnings.toLocaleString()}</h3>

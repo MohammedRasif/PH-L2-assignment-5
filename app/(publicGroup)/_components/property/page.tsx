@@ -1,5 +1,5 @@
 import { getProperties } from "@/app/service/propertyService";
-import PropertyClient from "../_components/PropertyClient";
+import PropertyClient from "../PropertyClient";
 
 // Force Next.js to skip static caching so the data refreshes instantly when the page is reloaded
 export const dynamic = "force-dynamic";

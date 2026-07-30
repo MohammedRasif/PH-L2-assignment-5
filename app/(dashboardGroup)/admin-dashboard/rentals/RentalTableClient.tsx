@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { getAdminRentalsAction } from "../_actions/adminActions";
+import { Search, MapPin } from "lucide-react";
 
 interface Property {
   id: string;
@@ -89,7 +90,9 @@ export default function RentalTableClient() {
       {/* Filter and Search controls */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex items-center justify-between">
         <div className="relative max-w-sm w-full">
-          <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">🔍</span>
+          <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+            <Search className="h-4 w-4" />
+          </span>
           <input
             type="text"
             placeholder="Search by property, tenant email, status or transaction..."
@@ -133,8 +136,8 @@ export default function RentalTableClient() {
                           {rental.property ? (
                             <div>
                               <div className="font-bold text-slate-900 line-clamp-1">{rental.property.title}</div>
-                              <div className="text-[10px] text-slate-400 font-normal">
-                                📍 {rental.property.location} • ৳ {rental.property.price.toLocaleString()}/mo
+                              <div className="text-[10px] text-slate-400 font-normal flex items-center gap-1 mt-0.5">
+                                <MapPin className="h-3 w-3 text-slate-400" /> {rental.property.location} • ৳ {rental.property.price.toLocaleString()}/mo
                               </div>
                             </div>
                           ) : (

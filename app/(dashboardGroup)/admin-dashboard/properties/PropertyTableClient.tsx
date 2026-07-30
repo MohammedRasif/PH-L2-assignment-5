@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { getAdminPropertiesAction } from "../_actions/adminActions";
+import { Search, MapPin } from "lucide-react";
 
 interface Category {
   id: string;
@@ -75,7 +76,9 @@ export default function PropertyTableClient() {
       {/* Filter and Search controls */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex items-center justify-between">
         <div className="relative max-w-sm w-full">
-          <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">🔍</span>
+          <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+            <Search className="h-4 w-4" />
+          </span>
           <input
             type="text"
             placeholder="Search by title, location, category or landlord..."
@@ -129,7 +132,7 @@ export default function PropertyTableClient() {
                       {/* Location */}
                       <td className="py-4 px-6">
                         <span className="flex items-center gap-1">
-                          <span>📍</span> {property.location}
+                          <MapPin className="h-3.5 w-3.5 text-slate-400" /> {property.location}
                         </span>
                       </td>
 

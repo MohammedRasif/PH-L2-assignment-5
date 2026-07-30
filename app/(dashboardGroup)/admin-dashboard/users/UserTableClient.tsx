@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useTransition } from "react";
 import { updateUserStatusAction, getAdminUsersAction } from "../_actions/adminActions";
+import { Search } from "lucide-react";
 
 interface UserProfile {
   id: string;
@@ -104,7 +105,9 @@ export default function UserTableClient() {
       {/* Filter and Search controls */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex items-center justify-between">
         <div className="relative max-w-sm w-full">
-          <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">🔍</span>
+          <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+            <Search className="h-4 w-4" />
+          </span>
           <input
             type="text"
             placeholder="Search users by name, email or role..."
