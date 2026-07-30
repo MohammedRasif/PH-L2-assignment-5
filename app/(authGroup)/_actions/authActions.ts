@@ -2,7 +2,8 @@
 
 import { cookies } from "next/headers";
 
-const BASE_URL = process.env.BACKEND_API_URL || "https://assignment-4-bay-six.vercel.app/";
+const rawBaseUrl = process.env.BACKEND_API_URL || "";
+const BASE_URL = rawBaseUrl.endsWith("/") ? rawBaseUrl : `${rawBaseUrl}/`;
 
 export async function loginAction(formData: any) {
   try {

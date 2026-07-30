@@ -50,6 +50,7 @@ function Navbar({ user }: NavbarProps) {
                   alt="Logo"
                   width={130}
                   height={130}
+                  style={{ height: "auto" }}
                   priority
                 />
               </div>

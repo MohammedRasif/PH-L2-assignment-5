@@ -8,7 +8,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("rasif2@gmail.com");
   const [password, setPassword] = useState("123");
   const [loading, setLoading] = useState(false);
-  
+
   // Custom Toast State
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
@@ -46,12 +46,14 @@ export default function LoginPage() {
 
       if (result.success) {
         showToast(result.message || "Logged in successfully!", "success");
-        
+
         // Fetch user profile to get the role for correct redirection
         const token = result.data?.accessToken;
-        
+
         if (token) {
-          const profileRes = await fetch("https://assignment-4-bay-six.vercel.app/api/users/me", {
+          const baseUrl = process.env.BACKEND_API_URL || "";
+          const normalizedUrl = baseUrl.endsWith("/") ? `${baseUrl}api/users/me` : `${baseUrl}/api/users/me`;
+          const profileRes = await fetch(normalizedUrl, {
             headers: {
               Authorization: token,
             },
@@ -62,7 +64,7 @@ export default function LoginPage() {
             if (profileResult.success) {
               const role = profileResult.data?.profile?.role;
               const targetPath = getDashboardLink(role);
-              
+
               // Delay redirect slightly so user sees success toast
               setTimeout(() => {
                 window.location.href = targetPath;
@@ -71,7 +73,7 @@ export default function LoginPage() {
             }
           }
         }
-        
+
         // Fallback redirection if profile fetch fails
         setTimeout(() => {
           window.location.href = "/";
@@ -92,11 +94,10 @@ export default function LoginPage() {
       {/* Toast Notification */}
       {toast && (
         <div
-          className={`fixed top-4 right-4 z-50 flex items-center gap-2 rounded-lg px-4 py-3 shadow-lg border transition-all duration-300 transform translate-y-0 animate-bounce ${
-            toast.type === "success"
-              ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-              : "bg-rose-50 border-rose-200 text-rose-800"
-          }`}
+          className={`fixed top-4 right-4 z-50 flex items-center gap-2 rounded-lg px-4 py-3 shadow-lg border transition-all duration-300 transform translate-y-0 animate-bounce ${toast.type === "success"
+            ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+            : "bg-rose-50 border-rose-200 text-rose-800"
+            }`}
         >
           {toast.type === "success" ? (
             <svg

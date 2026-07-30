@@ -9,7 +9,10 @@ export async function getMe() {
       return null;
     }
 
-    const response = await fetch(`${process.env.BACKEND_API_URL || 'https://assignment-4-bay-six.vercel.app/'}api/users/me`, {
+    const baseUrl = process.env.BACKEND_API_URL || "";
+    console.log(baseUrl,"kkkk")
+    const normalizedUrl = baseUrl.endsWith("/") ? `${baseUrl}api/users/me` : `${baseUrl}/api/users/me`;
+    const response = await fetch(normalizedUrl, {
       headers: {
         Authorization: token,
       },
