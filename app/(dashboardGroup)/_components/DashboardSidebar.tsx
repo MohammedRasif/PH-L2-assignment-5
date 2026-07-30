@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useTransition } from "react";
+import React, { useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSidebar } from "@/app/components/ui/sidebar";
 import {
   LayoutDashboard,
   Users,
@@ -15,6 +14,8 @@ import {
   Bookmark,
   LogOut,
   ArrowLeft,
+  Menu,
+  X,
 } from "lucide-react";
 import { logout } from "@/app/service/logout";
 
@@ -24,7 +25,7 @@ interface SidebarProps {
 
 export default function DashboardSidebar({ user }: SidebarProps) {
   const pathname = usePathname();
-  const { open } = useSidebar();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const role = user?.role || "TENANT";
@@ -66,14 +67,12 @@ export default function DashboardSidebar({ user }: SidebarProps) {
     });
   };
 
-  if (!open) return null;
-
-  return (
-    <aside className="w-64 border-r border-slate-200/80 bg-white h-screen sticky top-0 flex flex-col justify-between py-5 px-4 shadow-sm">
+  const NavContent = () => (
+    <>
       <div className="space-y-6">
         {/* Brand header */}
         <div className="px-2 pt-1 pb-2 border-b border-slate-100 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2" onClick={() => setMobileOpen(false)}>
             <span className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-extrabold text-sm shadow-md shadow-blue-500/20">
               R
             </span>
@@ -103,6 +102,7 @@ export default function DashboardSidebar({ user }: SidebarProps) {
                 <Link
                   key={link.name}
                   href={link.href}
+                  onClick={() => setMobileOpen(false)}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all ${
                     isActive
                       ? "bg-blue-50 text-blue-600 shadow-sm"
@@ -143,6 +143,51 @@ export default function DashboardSidebar({ user }: SidebarProps) {
           <span>{isPending ? "Logging out..." : "Log Out"}</span>
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile Top Navigation Header */}
+      <div className="md:hidden flex items-center justify-between bg-white border-b border-slate-200 px-4 py-3 sticky top-0 z-40 w-full shadow-sm">
+        <Link href="/" className="flex items-center gap-2">
+          <span className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-extrabold text-sm">
+            R
+          </span>
+          <span className="font-extrabold text-slate-900 tracking-tight text-lg">
+            Rent<span className="text-blue-600">Nest</span>
+          </span>
+        </Link>
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+          aria-label="Toggle navigation menu"
+        >
+          {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </button>
+      </div>
+
+      {/* Mobile Drawer Overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-40 md:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Mobile Sidebar Drawer */}
+      <div
+        className={`fixed inset-y-0 left-0 w-64 bg-white z-50 py-5 px-4 flex flex-col justify-between shadow-2xl transition-transform duration-300 transform md:hidden ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <NavContent />
+      </div>
+
+      {/* Desktop Permanent Sidebar */}
+      <aside className="hidden md:flex w-64 border-r border-slate-200/80 bg-white h-screen sticky top-0 flex-col justify-between py-5 px-4 shadow-sm shrink-0">
+        <NavContent />
+      </aside>
+    </>
   );
 }

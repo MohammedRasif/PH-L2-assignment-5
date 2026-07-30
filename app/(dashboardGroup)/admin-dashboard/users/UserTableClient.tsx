@@ -103,7 +103,7 @@ export default function UserTableClient() {
       )}
 
       {/* Filter and Search controls */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex items-center justify-between">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="relative max-w-sm w-full">
           <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
             <Search className="h-4 w-4" />
@@ -123,16 +123,16 @@ export default function UserTableClient() {
 
       {/* Table container */}
       {isLoading ? (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-16 flex flex-col items-center justify-center min-h-[350px]">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-12 flex flex-col items-center justify-center min-h-[300px]">
           <div className="relative flex items-center justify-center mb-4">
-            <div className="h-12 w-12 rounded-full border-4 border-slate-100 border-t-blue-600 animate-spin"></div>
+            <div className="h-10 w-10 rounded-full border-4 border-slate-100 border-t-blue-600 animate-spin"></div>
           </div>
           <span className="text-xs text-slate-500 font-semibold animate-pulse">Loading users...</span>
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-100 text-left text-sm">
+          <div className="overflow-x-auto w-full">
+            <table className="min-w-full divide-y divide-slate-100 text-left text-sm whitespace-nowrap">
               <thead className="bg-slate-55/70 text-slate-500 text-xs font-bold uppercase tracking-wider">
                 <tr>
                   <th className="py-4 px-6">Name</th>

@@ -9,12 +9,10 @@ const DashboardLayout = async ({
 }) => {
   const user = await getMe();
   return (
-    <div className="min-h-screen flex bg-slate-50">
+    <div className="min-h-screen flex flex-col md:flex-row bg-slate-50">
       <SidebarProvider>
-        <div className="flex flex-1 min-h-screen">
-          <DashboardSidebar user={user} />
-          <main className="flex-1 min-w-0 p-6 bg-slate-50">{children}</main>
-        </div>
+        <DashboardSidebar user={user} />
+        <main className="flex-1 min-w-0 p-4 sm:p-6 md:p-8 bg-slate-50 overflow-x-hidden">{children}</main>
       </SidebarProvider>
     </div>
   );
