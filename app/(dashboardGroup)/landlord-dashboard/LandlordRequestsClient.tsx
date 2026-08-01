@@ -25,7 +25,7 @@ export default function LandlordRequestsClient({ user }: LandlordRequestsClientP
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<{ id: string; action: "APPROVED" | "REJECTED" } | null>(null);
   const [activeTab, setActiveTab] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED" | "COMPLETED">("ALL");
 
   const fetchLandlordRequests = async () => {
@@ -52,7 +52,7 @@ export default function LandlordRequestsClient({ user }: LandlordRequestsClientP
   }, []);
 
   const handleUpdateStatus = async (requestId: string, status: "APPROVED" | "REJECTED") => {
-    setActionLoadingId(requestId);
+    setActionLoading({ id: requestId, action: status });
 
     try {
       const res = await updateLandlordRequestStatusAction(requestId, status);
@@ -67,7 +67,7 @@ export default function LandlordRequestsClient({ user }: LandlordRequestsClientP
     } catch (err: any) {
       toast.error(err.message || "An unexpected error occurred while updating status.");
     } finally {
-      setActionLoadingId(null);
+      setActionLoading(null);
     }
   };
 
@@ -289,10 +289,10 @@ export default function LandlordRequestsClient({ user }: LandlordRequestsClientP
                         <>
                           <button
                             onClick={() => handleUpdateStatus(req.id, "APPROVED")}
-                            disabled={actionLoadingId === req.id}
+                            disabled={actionLoading?.id === req.id}
                             className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-5 rounded-xl text-xs transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98]"
                           >
-                            {actionLoadingId === req.id ? (
+                            {actionLoading?.id === req.id && actionLoading?.action === "APPROVED" ? (
                               <span className="animate-spin inline-block w-3.5 h-3.5 border-2 border-current border-t-transparent text-white rounded-full"></span>
                             ) : (
                               <Check className="w-4 h-4" />
@@ -302,10 +302,10 @@ export default function LandlordRequestsClient({ user }: LandlordRequestsClientP
 
                           <button
                             onClick={() => handleUpdateStatus(req.id, "REJECTED")}
-                            disabled={actionLoadingId === req.id}
+                            disabled={actionLoading?.id === req.id}
                             className="bg-white hover:bg-rose-50 border border-rose-200 text-rose-600 font-bold py-2.5 px-5 rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98]"
                           >
-                            {actionLoadingId === req.id ? (
+                            {actionLoading?.id === req.id && actionLoading?.action === "REJECTED" ? (
                               <span className="animate-spin inline-block w-3.5 h-3.5 border-2 border-current border-t-transparent text-rose-600 rounded-full"></span>
                             ) : (
                               <X className="w-4 h-4" />
