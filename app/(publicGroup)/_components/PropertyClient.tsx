@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { createRentalRequestAction } from "@/app/actions/requestActions";
+import { toast } from "react-toastify";
 
 interface Category {
   id: string;
@@ -42,11 +44,22 @@ interface PropertyClientProps {
     amenities?: string;
   };
   currentUser?: any;
+  initialTenantRequests?: any[];
 }
 
-export default function PropertyClient({ initialProperties, activeFilters, currentUser }: PropertyClientProps) {
+export default function PropertyClient({
+  initialProperties,
+  activeFilters,
+  currentUser,
+  initialTenantRequests = [],
+}: PropertyClientProps) {
   const router = useRouter();
   const pathname = usePathname();
+
+  // Console log property details as requested by user
+  useEffect(() => {
+    console.log("property details", initialProperties);
+  }, [initialProperties]);
 
   // Search & Filter Input States initialized from active URL filters
   const [searchTerm, setSearchTerm] = useState(activeFilters.location || "");
@@ -57,30 +70,31 @@ export default function PropertyClient({ initialProperties, activeFilters, curre
   // Rental request tracking state
   const [loadingPropertyId, setLoadingPropertyId] = useState<string | null>(null);
   const [requestedIds, setRequestedIds] = useState<Set<string>>(new Set());
-  const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  // Map propertyId -> request status (PENDING, APPROVED, COMPLETED, REJECTED)
+  const [tenantRequestsMap, setTenantRequestsMap] = useState<{ [propId: string]: string }>(() => {
+    const map: { [propId: string]: string } = {};
+    initialTenantRequests.forEach((req) => {
+      if (req.propertyId) {
+        map[req.propertyId] = req.status;
+      }
+    });
+    return map;
+  });
 
   const handleSubmitRentRequest = async (propertyId: string, propertyTitle: string) => {
     setLoadingPropertyId(propertyId);
-    setNotification(null);
     try {
       const res = await createRentalRequestAction(propertyId);
       if (res?.success) {
         setRequestedIds((prev) => new Set(prev).add(propertyId));
-        setNotification({
-          type: "success",
-          message: res.message || `Rental request for "${propertyTitle}" submitted successfully!`,
-        });
+        setTenantRequestsMap((prev) => ({ ...prev, [propertyId]: "PENDING" }));
+        toast.success(res.message || `Rental request for "${propertyTitle}" submitted successfully!`);
       } else {
-        setNotification({
-          type: "error",
-          message: res?.message || "Failed to submit rental request.",
-        });
+        toast.error(res?.message || "Failed to submit rental request.");
       }
     } catch (err: any) {
-      setNotification({
-        type: "error",
-        message: err.message || "An error occurred while submitting rental request.",
-      });
+      toast.error(err.message || "An error occurred while submitting rental request.");
     } finally {
       setLoadingPropertyId(null);
     }
@@ -142,28 +156,6 @@ export default function PropertyClient({ initialProperties, activeFilters, curre
             Browse through our premium, verified property listings. Real-time updates directly from landlords and owners.
           </p>
         </div>
-
-        {/* Global Notification Banner */}
-        {notification && (
-          <div
-            className={`mb-8 p-4 rounded-xl border flex items-center justify-between shadow-sm transition-all animate-fadeIn ${
-              notification.type === "success"
-                ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                : "bg-rose-50 border-rose-200 text-rose-800"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-xl">{notification.type === "success" ? "✅" : "⚠️"}</span>
-              <p className="text-sm font-semibold">{notification.message}</p>
-            </div>
-            <button
-              onClick={() => setNotification(null)}
-              className="text-xs font-bold px-2 py-1 rounded hover:bg-black/5"
-            >
-              ✕
-            </button>
-          </div>
-        )}
 
         {/* Search and Filters Card */}
         <form onSubmit={handleSearch} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-10">
@@ -311,34 +303,76 @@ export default function PropertyClient({ initialProperties, activeFilters, curre
                     </div>
                   )}
 
-                  {/* Submit Rent Request Button for TENANT role */}
-                  {currentUser?.role === "TENANT" && (
-                    <div className="mt-auto pt-4 border-t border-slate-100">
-                      <button
-                        type="button"
-                        disabled={loadingPropertyId === property.id || requestedIds.has(property.id)}
-                        onClick={() => handleSubmitRentRequest(property.id, property.title)}
-                        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-emerald-600 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed hover:scale-[1.01] active:scale-[0.99]"
-                      >
-                        {loadingPropertyId === property.id ? (
-                          <>
-                            <span className="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent text-white rounded-full"></span>
-                            <span>Submitting Request...</span>
-                          </>
-                        ) : requestedIds.has(property.id) ? (
-                          <>
-                            <span>✓</span>
-                            <span>Request Sent</span>
-                          </>
-                        ) : (
-                          <>
-                            <span>📩</span>
-                            <span>Submit Rent Request</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  )}
+                  {/* Submit Rent Request or Request Status for TENANT role */}
+                  {currentUser?.role === "TENANT" && (() => {
+                    const status = tenantRequestsMap[property.id] || (requestedIds.has(property.id) ? "PENDING" : null);
+
+                    if (status === "PENDING") {
+                      return (
+                        <div className="mt-auto pt-4 border-t border-slate-100">
+                          <div className="w-full bg-amber-50 text-amber-800 border border-amber-200 font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs">
+                            <span>⏳</span> Request Pending Approval
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (status === "APPROVED") {
+                      return (
+                        <div className="mt-auto pt-4 border-t border-slate-100">
+                          <Link
+                            href="/rental-dashboard"
+                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.01]"
+                          >
+                            <span>🎉</span> Approved - Pay in Dashboard →
+                          </Link>
+                        </div>
+                      );
+                    }
+
+                    if (status === "COMPLETED") {
+                      return (
+                        <div className="mt-auto pt-4 border-t border-slate-100">
+                          <div className="w-full bg-blue-50 text-blue-800 border border-blue-200 font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs">
+                            <span>✓</span> Lease Active / Paid
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (status === "REJECTED") {
+                      return (
+                        <div className="mt-auto pt-4 border-t border-slate-100">
+                          <div className="w-full bg-rose-50 text-rose-800 border border-rose-200 font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs">
+                            <span>✕</span> Request Rejected
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="mt-auto pt-4 border-t border-slate-100">
+                        <button
+                          type="button"
+                          disabled={loadingPropertyId === property.id}
+                          onClick={() => handleSubmitRentRequest(property.id, property.title)}
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed hover:scale-[1.01] active:scale-[0.99]"
+                        >
+                          {loadingPropertyId === property.id ? (
+                            <>
+                              <span className="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent text-white rounded-full"></span>
+                              <span>Submitting Request...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>📩</span>
+                              <span>Submit Rent Request</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             ))}

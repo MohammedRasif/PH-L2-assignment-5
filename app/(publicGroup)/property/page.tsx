@@ -1,6 +1,7 @@
 import { getProperties } from "@/app/service/propertyService";
 import PropertyClient from "../_components/PropertyClient";
 import { getMe } from "@/app/service/getMe";
+import { getTenantRequests } from "@/app/service/requestService";
 
 // Force Next.js to skip static caching so the data refreshes instantly when the page is reloaded
 export const dynamic = "force-dynamic";
@@ -30,14 +31,27 @@ export default async function PropertyPage({ searchParams }: PropertyPageProps) 
     amenities: resolvedParams.amenities ? resolvedParams.amenities.split(",") : undefined,
   };
 
-  // This fetches the data on the server side on every request, without caching.
+  // Fetch properties from backend API using fetch
   const properties = await getProperties(filters);
+
+  // Console log property details as requested
+  console.log("property details", properties);
+
+  let initialTenantRequests: any[] = [];
+  if (user?.role === "TENANT") {
+    try {
+      initialTenantRequests = await getTenantRequests();
+    } catch (err) {
+      console.error("Failed to load tenant requests for property page:", err);
+    }
+  }
 
   return (
     <PropertyClient 
       initialProperties={properties} 
       activeFilters={resolvedParams}
       currentUser={user}
+      initialTenantRequests={initialTenantRequests}
     />
   );
 }

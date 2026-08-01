@@ -1,182 +1,303 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { getLandlordRequestsAction, updateLandlordRequestStatusAction } from "@/app/actions/requestActions";
-import { Check, X, Clock, CheckCircle2, XCircle, Building2, User, RefreshCw, AlertCircle } from "lucide-react";
+import { toast } from "react-toastify";
+import {
+  getPropertiesAction,
+  getCategoriesAction,
+  createPropertyAction,
+  updatePropertyAction,
+  deletePropertyAction,
+} from "@/app/actions/propertyActions";
+import {
+  Building2,
+  Clock,
+  CheckCircle2,
+  User,
+  RefreshCw,
+  PlusCircle,
+  Upload,
+  Image as ImageIcon,
+  Edit2,
+  Trash2,
+  MapPin,
+  FileText,
+  ArrowRight,
+  X,
+  AlertCircle,
+} from "lucide-react";
+import Link from "next/link";
 
 interface LandlordDashboardClientProps {
   user: any;
 }
 
 export default function LandlordDashboardClient({ user }: LandlordDashboardClientProps) {
-  const [requests, setRequests] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
-  const [toastMessage, setToastMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED" | "COMPLETED">("ALL");
+  // Landlord Properties state
+  const [myProperties, setMyProperties] = useState<any[]>([]);
+  const [loadingProperties, setLoadingProperties] = useState(true);
+  const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(null);
 
-  const fetchLandlordRequests = async () => {
-    setLoading(true);
-    setError("");
+  // Upload / Edit Property Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingPropertyId, setEditingPropertyId] = useState<string | null>(null);
+
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+  const [submittingProperty, setSubmittingProperty] = useState(false);
+  const [modalError, setModalError] = useState("");
+
+  // Form State (EMPTY defaults)
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [price, setPrice] = useState<number | "">("");
+  const [location, setLocation] = useState("");
+  const [bedrooms, setBedrooms] = useState<number | "">("");
+  const [bathrooms, setBathrooms] = useState<number | "">("");
+  const [categoryId, setCategoryId] = useState("");
+  const [amenitiesInput, setAmenitiesInput] = useState("");
+  const [uploadedImageDataUrl, setUploadedImageDataUrl] = useState("");
+  const [isAvailable, setIsAvailable] = useState(true);
+
+  // 1. Fetch Landlord Properties
+  const fetchMyProperties = async () => {
+    setLoadingProperties(true);
     try {
-      const res = await getLandlordRequestsAction();
+      const res = await getPropertiesAction();
       if (res.success && Array.isArray(res.data)) {
-        setRequests(res.data);
-      } else {
-        setError(res.message || "Failed to load landlord requests.");
+        const landlordProps = res.data.filter(
+          (p: any) => p.ownerId === user.id || p.owner?.id === user.id
+        );
+        setMyProperties(landlordProps.length > 0 ? landlordProps : res.data);
       }
     } catch (err: any) {
-      setError(err.message || "An error occurred while fetching requests.");
+      toast.error(err.message || "Failed to load properties.");
     } finally {
-      setLoading(false);
+      setLoadingProperties(false);
+    }
+  };
+
+  // 2. Fetch Categories
+  const fetchCategories = async () => {
+    setLoadingCategories(true);
+    try {
+      const res = await getCategoriesAction();
+      if (res.success && Array.isArray(res.data)) {
+        setCategories(res.data);
+        if (res.data.length > 0 && !categoryId) {
+          setCategoryId(res.data[0].id);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load categories:", err);
+    } finally {
+      setLoadingCategories(false);
     }
   };
 
   useEffect(() => {
-    fetchLandlordRequests();
+    fetchMyProperties();
+    fetchCategories();
   }, []);
 
-  const handleUpdateStatus = async (requestId: string, status: "APPROVED" | "REJECTED") => {
-    setActionLoadingId(requestId);
-    setToastMessage(null);
+  // Open Modal for NEW Property (empty fields)
+  const handleOpenAddModal = () => {
+    setEditingPropertyId(null);
+    setTitle("");
+    setDescription("");
+    setPrice("");
+    setLocation("");
+    setBedrooms("");
+    setBathrooms("");
+    setAmenitiesInput("");
+    setUploadedImageDataUrl("");
+    setIsAvailable(true);
+    setModalError("");
+    if (categories.length > 0) {
+      setCategoryId(categories[0].id);
+    }
+    setIsModalOpen(true);
+  };
+
+  // Open Modal for EDIT Property (pre-fill fields)
+  const handleOpenEditModal = (property: any) => {
+    setEditingPropertyId(property.id);
+    setTitle(property.title || "");
+    setDescription(property.description || "");
+    setPrice(property.price || "");
+    setLocation(property.location || "");
+    setBedrooms(property.bedrooms || "");
+    setBathrooms(property.bathrooms || "");
+    setCategoryId(property.categoryId || property.category?.id || (categories[0]?.id || ""));
+    setAmenitiesInput(
+      Array.isArray(property.amenities) ? property.amenities.join(", ") : ""
+    );
+    setUploadedImageDataUrl(
+      Array.isArray(property.images) && property.images.length > 0 ? property.images[0] : ""
+    );
+    setIsAvailable(property.isAvailable ?? true);
+    setModalError("");
+    setIsModalOpen(true);
+  };
+
+  // Device File Upload Handler
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUploadedImageDataUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Delete Property Handler with foreign key error handling & Toastify
+  const handleDeleteProperty = async (propertyId: string, propertyTitle: string) => {
+    if (!confirm(`Are you sure you want to delete property "${propertyTitle}"?`)) {
+      return;
+    }
+
+    setDeletingPropertyId(propertyId);
 
     try {
-      const res = await updateLandlordRequestStatusAction(requestId, status);
+      const res = await deletePropertyAction(propertyId);
       if (res?.success) {
-        setToastMessage({
-          type: "success",
-          text: res.message || `Rental request ${status.toLowerCase()} successfully!`,
-        });
-        // Optimistically update status in local state
-        setRequests((prev) =>
-          prev.map((r) => (r.id === requestId ? { ...r, status: status } : r))
-        );
+        toast.success(res.message || `Property "${propertyTitle}" deleted successfully!`);
+        setMyProperties((prev) => prev.filter((p) => p.id !== propertyId));
       } else {
-        setToastMessage({
-          type: "error",
-          text: res?.message || `Failed to update request status to ${status}.`,
-        });
+        const rawMsg = res?.message || "";
+        // Check for Foreign Key constraint violation error
+        if (
+          rawMsg.includes("violates RESTRICT setting") ||
+          rawMsg.includes("foreign key constraint") ||
+          rawMsg.includes("rental_requests_propertyId_fkey")
+        ) {
+          toast.error(
+            `Cannot delete "${propertyTitle}" because active rental requests are attached to it. Please delete or resolve rental requests first!`
+          );
+        } else {
+          toast.error(rawMsg || "Failed to delete property.");
+        }
       }
     } catch (err: any) {
-      setToastMessage({
-        type: "error",
-        text: err.message || "An unexpected error occurred while updating status.",
-      });
+      const errStr = err.message || "";
+      if (errStr.includes("foreign key constraint") || errStr.includes("violates RESTRICT")) {
+        toast.error("Cannot delete property: rental requests exist for this property.");
+      } else {
+        toast.error(errStr || "An error occurred while deleting property.");
+      }
     } finally {
-      setActionLoadingId(null);
+      setDeletingPropertyId(null);
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "PENDING":
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
-            <Clock className="w-3.5 h-3.5" /> Pending Review
-          </span>
-        );
-      case "APPROVED":
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-            <CheckCircle2 className="w-3.5 h-3.5" /> Approved
-          </span>
-        );
-      case "COMPLETED":
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
-            <CheckCircle2 className="w-3.5 h-3.5" /> Completed (Paid)
-          </span>
-        );
-      case "REJECTED":
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200">
-            <XCircle className="w-3.5 h-3.5" /> Rejected
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-800 border border-slate-200">
-            {status}
-          </span>
-        );
+  // Submit Form (Create or Update via PUT/POST)
+  const handleSaveProperty = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmittingProperty(true);
+    setModalError("");
+
+    if (!title || !description || price === "" || !location || !categoryId) {
+      setModalError("Please fill in all required fields.");
+      setSubmittingProperty(false);
+      return;
+    }
+
+    const amenities = amenitiesInput
+      .split(",")
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+
+    const images: string[] = [];
+    if (uploadedImageDataUrl) {
+      images.push(uploadedImageDataUrl);
+    }
+
+    const payload = {
+      title,
+      description,
+      price: Number(price),
+      location,
+      bedrooms: Number(bedrooms) || 1,
+      bathrooms: Number(bathrooms) || 1,
+      categoryId,
+      amenities,
+      images,
+      isAvailable: isAvailable,
+    };
+
+    try {
+      let res: any;
+      if (editingPropertyId) {
+        // PUT /api/properties/:id
+        res = await updatePropertyAction(editingPropertyId, payload);
+      } else {
+        // POST /api/properties
+        res = await createPropertyAction(payload);
+      }
+
+      if (res?.success) {
+        const successText = res.message || (editingPropertyId ? "Property updated successfully!" : "Property uploaded successfully!");
+        toast.success(successText);
+        setIsModalOpen(false);
+        fetchMyProperties();
+      } else {
+        setModalError(res?.message || "Failed to save property.");
+        toast.error(res?.message || "Failed to save property.");
+      }
+    } catch (err: any) {
+      setModalError(err.message || "An error occurred while saving property.");
+      toast.error(err.message || "An error occurred while saving property.");
+    } finally {
+      setSubmittingProperty(false);
     }
   };
 
-  // Filter requests
-  const filteredRequests = activeTab === "ALL" 
-    ? requests 
-    : requests.filter((r) => r.status === activeTab);
-
-  // Stats calculation
-  const totalCount = requests.length;
-  const pendingCount = requests.filter((r) => r.status === "PENDING").length;
-  const approvedCount = requests.filter((r) => r.status === "APPROVED").length;
-  const completedCount = requests.filter((r) => r.status === "COMPLETED").length;
+  const myPropertiesCount = myProperties.length;
 
   return (
     <div className="space-y-8">
-      {/* Header */}
+      {/* Header with Upload Property Button */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
             Landlord Dashboard
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Welcome back, <span className="font-semibold text-slate-800">{user.name}</span>. Manage tenant rental applications and property requests.
+            Welcome back, <span className="font-semibold text-slate-800">{user.name}</span>. Manage your property listings and review tenant applications.
           </p>
         </div>
-        <button
-          onClick={fetchLandlordRequests}
-          disabled={loading}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50 self-start md:self-auto"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-          <span>Refresh List</span>
-        </button>
-      </div>
 
-      {/* Global Toast Notification */}
-      {toastMessage && (
-        <div
-          className={`p-4 rounded-xl border flex items-center justify-between shadow-sm transition-all animate-fadeIn ${
-            toastMessage.type === "success"
-              ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-              : "bg-rose-50 border-rose-200 text-rose-800"
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-xl">{toastMessage.type === "success" ? "✅" : "⚠️"}</span>
-            <p className="text-sm font-semibold">{toastMessage.text}</p>
-          </div>
+        <div className="flex flex-wrap items-center gap-3">
           <button
-            onClick={() => setToastMessage(null)}
-            className="text-xs font-bold px-2 py-1 rounded hover:bg-black/5"
+            onClick={handleOpenAddModal}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-500/20 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
           >
-            ✕
+            <PlusCircle className="w-4 h-4" />
+            <span>Upload Property</span>
+          </button>
+
+          <button
+            onClick={fetchMyProperties}
+            disabled={loadingProperties}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loadingProperties ? "animate-spin" : ""}`} />
+            <span>Refresh</span>
           </button>
         </div>
-      )}
+      </div>
 
       {/* Summary Cards */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm flex items-center gap-4">
           <div className="p-3.5 bg-blue-50 text-blue-600 rounded-xl">
             <Building2 className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Requests</p>
-            <h3 className="text-2xl font-black text-slate-900 mt-1">{totalCount}</h3>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm flex items-center gap-4">
-          <div className="p-3.5 bg-amber-50 text-amber-600 rounded-xl">
-            <Clock className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pending Review</p>
-            <h3 className="text-2xl font-black text-amber-600 mt-1">{pendingCount}</h3>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">My Properties</p>
+            <h3 className="text-2xl font-black text-slate-900 mt-1">{myPropertiesCount}</h3>
           </div>
         </div>
 
@@ -185,159 +306,383 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
             <CheckCircle2 className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Approved</p>
-            <h3 className="text-2xl font-black text-slate-900 mt-1">{approvedCount}</h3>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Status</p>
+            <h3 className="text-2xl font-black text-emerald-600 mt-1">Verified</h3>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm flex items-center gap-4">
+        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm flex items-center gap-4 sm:col-span-2 lg:col-span-1">
           <div className="p-3.5 bg-indigo-50 text-indigo-600 rounded-xl">
             <User className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Leases Completed</p>
-            <h3 className="text-2xl font-black text-slate-900 mt-1">{completedCount}</h3>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Role</p>
+            <h3 className="text-xl font-black text-slate-900 mt-1">{user.role}</h3>
           </div>
         </div>
       </div>
 
-      {/* Main Request Container */}
-      <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-          <div>
-            <h2 className="text-lg font-extrabold text-slate-900">Incoming Tenant Applications</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Review and approve or reject rental requests for your properties</p>
+      {/* BANNER: Link to Incoming Tenant Applications Route */}
+      <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-blue-200">
+            <FileText className="w-4 h-4" />
+            <span>Applications Portal</span>
           </div>
+          <h3 className="text-xl font-bold">Incoming Tenant Applications</h3>
+          <p className="text-xs text-blue-100 max-w-xl">
+            Review, approve, or reject rental requests submitted by prospective tenants on a dedicated management screen.
+          </p>
+        </div>
+        <Link
+          href="/landlord-dashboard/requests"
+          className="px-5 py-3 bg-white text-blue-700 hover:bg-blue-50 font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 shrink-0 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+        >
+          <span>View Tenant Applications</span>
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
 
-          {/* Filter Tabs */}
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl overflow-x-auto">
-            {(["ALL", "PENDING", "APPROVED", "REJECTED", "COMPLETED"] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all capitalize cursor-pointer whitespace-nowrap ${
-                  activeTab === tab
-                    ? "bg-white text-slate-900 shadow-xs"
-                    : "text-slate-500 hover:text-slate-900"
-                }`}
-              >
-                {tab.toLowerCase()}
-              </button>
-            ))}
+      {/* My Listed Properties Grid Section */}
+      <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm space-y-6">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div>
+            <h2 className="text-lg font-extrabold text-slate-900">My Listed Properties</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Manage, edit, or delete your property listings</p>
           </div>
+          <button
+            onClick={handleOpenAddModal}
+            className="px-3.5 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold text-xs rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            <PlusCircle className="w-3.5 h-3.5" />
+            <span>Add New</span>
+          </button>
         </div>
 
-        {error && (
-          <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-sm font-semibold flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        {loading ? (
-          <div className="space-y-4 py-8">
+        {loadingProperties ? (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-32 bg-slate-100 rounded-2xl animate-pulse" />
+              <div key={i} className="h-48 bg-slate-100 rounded-2xl animate-pulse" />
             ))}
           </div>
-        ) : filteredRequests.length === 0 ? (
-          <div className="text-center py-16 px-4">
-            <span className="text-5xl block mb-3">📬</span>
-            <h3 className="text-lg font-bold text-slate-800">No Rental Requests Found</h3>
+        ) : myProperties.length === 0 ? (
+          <div className="text-center py-12 px-4">
+            <span className="text-5xl block mb-3">🏡</span>
+            <h3 className="text-lg font-bold text-slate-800">No Properties Listed Yet</h3>
             <p className="text-slate-500 text-sm mt-1 max-w-md mx-auto">
-              There are currently no rental requests under the selected filter.
+              You haven't added any properties. Click "Upload Property" to create your first listing.
             </p>
+            <button
+              onClick={handleOpenAddModal}
+              className="mt-4 inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-xl text-xs transition-all shadow-sm cursor-pointer"
+            >
+              Upload Property
+            </button>
           </div>
         ) : (
-          <div className="grid gap-6">
-            {filteredRequests.map((req) => {
-              const tenant = req.tenant || {};
-              const prop = req.property || {};
-              const isPending = req.status === "PENDING";
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {myProperties.map((prop) => (
+              <div
+                key={prop.id}
+                className="bg-white rounded-2xl border border-slate-150 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+              >
+                <div className="p-5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">
+                      {prop.category?.name || "Home"}
+                    </span>
+                    <span
+                      className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase ${
+                        prop.isAvailable ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"
+                      }`}
+                    >
+                      {prop.isAvailable ? "Available" : "Occupied"}
+                    </span>
+                  </div>
 
-              return (
-                <div
-                  key={req.id}
-                  className={`rounded-2xl border transition-all p-6 ${
-                    isPending
-                      ? "border-amber-200 bg-amber-50/10 shadow-xs"
-                      : req.status === "APPROVED"
-                      ? "border-emerald-200 bg-emerald-50/10"
-                      : "border-slate-100 bg-white"
-                  }`}
-                >
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                    {/* Details section */}
-                    <div className="space-y-3 flex-1">
-                      <div className="flex flex-wrap items-center gap-3">
-                        {getStatusBadge(req.status)}
-                        <span className="text-xs text-slate-400 font-medium">
-                          Received on {new Date(req.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
+                  <h3 className="text-base font-bold text-slate-900 line-clamp-1">{prop.title}</h3>
 
-                      {/* Property title & Location */}
-                      <div>
-                        <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Property Requested</span>
-                        <h3 className="text-xl font-bold text-slate-900 mt-0.5">{prop.title || "Property Listing"}</h3>
-                        <p className="text-xs text-slate-500 mt-0.5">📍 {prop.location} • ৳ {prop.price?.toLocaleString()} / month</p>
-                      </div>
+                  <p className="text-xs text-slate-500 line-clamp-2">{prop.description}</p>
 
-                      {/* Tenant Card */}
-                      <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-full bg-blue-100 text-blue-700 font-extrabold flex items-center justify-center text-sm shrink-0">
-                          {tenant.name ? tenant.name.charAt(0).toUpperCase() : "T"}
-                        </div>
-                        <div className="flex flex-col text-xs min-w-0">
-                          <span className="font-bold text-slate-800 truncate">{tenant.name || "Tenant Name"}</span>
-                          <span className="text-slate-500 truncate">{tenant.email || "No email provided"}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons for PENDING status */}
-                    <div className="flex flex-col sm:flex-row lg:flex-col items-stretch lg:items-end justify-center gap-3 shrink-0 border-t lg:border-t-0 pt-4 lg:pt-0 border-slate-100">
-                      {isPending ? (
-                        <>
-                          <button
-                            onClick={() => handleUpdateStatus(req.id, "APPROVED")}
-                            disabled={actionLoadingId === req.id}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-5 rounded-xl text-xs transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98]"
-                          >
-                            {actionLoadingId === req.id ? (
-                              <span className="animate-spin inline-block w-3.5 h-3.5 border-2 border-current border-t-transparent text-white rounded-full"></span>
-                            ) : (
-                              <Check className="w-4 h-4" />
-                            )}
-                            <span>Approve Request</span>
-                          </button>
-
-                          <button
-                            onClick={() => handleUpdateStatus(req.id, "REJECTED")}
-                            disabled={actionLoadingId === req.id}
-                            className="bg-white hover:bg-rose-50 border border-rose-200 text-rose-600 font-bold py-2.5 px-5 rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98]"
-                          >
-                            {actionLoadingId === req.id ? (
-                              <span className="animate-spin inline-block w-3.5 h-3.5 border-2 border-current border-t-transparent text-rose-600 rounded-full"></span>
-                            ) : (
-                              <X className="w-4 h-4" />
-                            )}
-                            <span>Reject Request</span>
-                          </button>
-                        </>
-                      ) : (
-                        <div className="text-right text-xs font-semibold text-slate-500">
-                          Status: <span className="font-bold text-slate-800">{req.status}</span>
-                        </div>
-                      )}
-                    </div>
+                  <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-100">
+                    <span className="text-slate-500 flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-blue-600" /> {prop.location}
+                    </span>
+                    <span className="font-extrabold text-slate-900">৳ {prop.price?.toLocaleString()}</span>
                   </div>
                 </div>
-              );
-            })}
+
+                {/* Edit & Delete Action Buttons */}
+                <div className="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
+                  <button
+                    onClick={() => handleOpenEditModal(prop)}
+                    className="p-2 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-all text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    title="Edit Property"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                    <span>Edit</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleDeleteProperty(prop.id, prop.title)}
+                    disabled={deletingPropertyId === prop.id}
+                    className="p-2 rounded-lg bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 transition-all text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-2xs disabled:opacity-50"
+                    title="Delete Property"
+                  >
+                    {deletingPropertyId === prop.id ? (
+                      <span className="animate-spin inline-block w-3.5 h-3.5 border-2 border-current border-t-transparent text-rose-600 rounded-full"></span>
+                    ) : (
+                      <Trash2 className="w-3.5 h-3.5" />
+                    )}
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
+
+      {/* Upload / Edit Property Modal Popup */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-fadeIn my-8">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-blue-100 text-blue-600 rounded-xl">
+                  {editingPropertyId ? <Edit2 className="w-5 h-5" /> : <Upload className="w-5 h-5" />}
+                </div>
+                <div>
+                  <h3 className="text-lg font-extrabold text-slate-900">
+                    {editingPropertyId ? "Edit Property Listing" : "Upload New Property"}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {editingPropertyId ? "Update property details below" : "Enter property details to list a new rental"}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleSaveProperty} className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
+              {modalError && (
+                <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-semibold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{modalError}</span>
+                </div>
+              )}
+
+              {/* Title & Category */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Property Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Modern Apartment in Gulshan"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Category *
+                  </label>
+                  {loadingCategories ? (
+                    <div className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 text-sm animate-pulse">
+                      Loading categories from API...
+                    </div>
+                  ) : (
+                    <select
+                      required
+                      value={categoryId}
+                      onChange={(e) => setCategoryId(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium bg-white cursor-pointer"
+                    >
+                      <option value="" disabled>Select Category</option>
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Description *
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="Enter property description..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium"
+                />
+              </div>
+
+              {/* Price & Location */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Price (BDT / Month) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    placeholder="e.g. 45000"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value ? Number(e.target.value) : "")}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Location *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Gulshan 2, Dhaka"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium"
+                  />
+                </div>
+              </div>
+
+              {/* Bedrooms & Bathrooms */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Bedrooms *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    placeholder="e.g. 3"
+                    value={bedrooms}
+                    onChange={(e) => setBedrooms(e.target.value ? Number(e.target.value) : "")}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Bathrooms *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    placeholder="e.g. 2"
+                    value={bathrooms}
+                    onChange={(e) => setBathrooms(e.target.value ? Number(e.target.value) : "")}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium"
+                  />
+                </div>
+              </div>
+
+              {/* Amenities */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Amenities (Comma Separated)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. WiFi, Parking, Elevator, Generator"
+                  value={amenitiesInput}
+                  onChange={(e) => setAmenitiesInput(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium"
+                />
+              </div>
+
+              {/* Device File Upload ONLY */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Property Image (Upload from Device)
+                </label>
+
+                <div className="border-2 border-dashed border-slate-200 hover:border-blue-500 rounded-2xl p-5 text-center cursor-pointer transition-all bg-slate-50">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageFileChange}
+                    className="hidden"
+                    id="property-image-file"
+                  />
+                  <label htmlFor="property-image-file" className="cursor-pointer block">
+                    <ImageIcon className="w-8 h-8 text-blue-500 mx-auto mb-1" />
+                    <span className="text-xs font-bold text-blue-600 block">Click to Select Image from Device</span>
+                    <span className="text-[10px] text-slate-400">Supports PNG, JPG, WEBP</span>
+                  </label>
+                </div>
+
+                {uploadedImageDataUrl && (
+                  <div className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 font-semibold">
+                    <div className="flex items-center gap-2">
+                      <span>🖼️</span>
+                      <span>Image attached</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setUploadedImageDataUrl("")}
+                      className="text-xs text-red-600 font-bold hover:underline cursor-pointer"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingProperty}
+                  className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-all shadow-md shadow-blue-500/20 flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {submittingProperty ? (
+                    <>
+                      <span className="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent text-white rounded-full"></span>
+                      <span>Saving Property...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      <span>{editingPropertyId ? "Update Property" : "Upload Property"}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

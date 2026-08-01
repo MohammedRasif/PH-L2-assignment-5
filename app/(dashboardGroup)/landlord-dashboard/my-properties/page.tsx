@@ -1,11 +1,11 @@
 import React from "react";
 import { getMe } from "@/app/service/getMe";
 import { redirect } from "next/navigation";
-import LandlordRequestsClient from "../LandlordRequestsClient";
+import LandlordDashboardClient from "../LandlordDashboardClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function LandlordRequestsPage() {
+export default async function LandlordMyPropertiesPage() {
   const user = await getMe();
 
   if (!user) {
@@ -16,5 +16,5 @@ export default async function LandlordRequestsPage() {
     redirect("/");
   }
 
-  return <LandlordRequestsClient user={user} />;
+  return <LandlordDashboardClient user={user} />;
 }
