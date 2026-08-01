@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { getTenantRequestsAction, createPaymentAction } from "@/app/actions/requestActions";
+import { toast } from "react-toastify";
 import { CreditCard, Clock, CheckCircle2, XCircle, Home, Calendar, AlertCircle, RefreshCw } from "lucide-react";
 
 interface TenantDashboardClientProps {
@@ -42,20 +43,24 @@ export default function TenantDashboardClient({ user }: TenantDashboardClientPro
 
     try {
       const res = await createPaymentAction(requestId, "STRIPE");
-      if (res.success && res.data?.checkoutUrl) {
-        // Redirect to Stripe checkout URL
+      if (res?.success && res.data?.checkoutUrl) {
+        toast.info("Redirecting to Stripe checkout session...");
         window.location.href = res.data.checkoutUrl;
       } else {
+        const errorMsg = res?.message || "Failed to create payment checkout session. Server returned an error response.";
+        toast.error(errorMsg);
         setPaymentError((prev) => ({
           ...prev,
-          [requestId]: res.message || "Failed to create payment checkout session.",
+          [requestId]: errorMsg,
         }));
         setPayingRequestId(null);
       }
     } catch (err: any) {
+      const errText = err.message || "An unexpected error occurred during payment setup.";
+      toast.error(errText);
       setPaymentError((prev) => ({
         ...prev,
-        [requestId]: err.message || "An unexpected error occurred during payment setup.",
+        [requestId]: errText,
       }));
       setPayingRequestId(null);
     }

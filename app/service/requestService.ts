@@ -14,6 +14,19 @@ async function getAuthHeaders() {
   };
 }
 
+async function safeJsonResponse(response: Response) {
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {
+      success: false,
+      statusCode: response.status,
+      message: `Backend API returned status ${response.status} (${response.statusText}). Check server URL or endpoint.`,
+    };
+  }
+}
+
 // 1. Submit Rental Request (Tenant)
 export async function createRentalRequest(propertyId: string) {
   const baseUrl = getBaseUrl();
@@ -25,7 +38,7 @@ export async function createRentalRequest(propertyId: string) {
     body: JSON.stringify({ propertyId }),
   });
 
-  return await response.json();
+  return await safeJsonResponse(response);
 }
 
 // 2. Fetch Tenant Rental Requests
@@ -43,7 +56,7 @@ export async function getTenantRequests() {
     throw new Error("Failed to fetch tenant rental requests");
   }
 
-  const result = await response.json();
+  const result = await safeJsonResponse(response);
   return result.data || [];
 }
 
@@ -62,7 +75,7 @@ export async function getLandlordRequests() {
     throw new Error("Failed to fetch landlord rental requests");
   }
 
-  const result = await response.json();
+  const result = await safeJsonResponse(response);
   return result.data || [];
 }
 
@@ -85,7 +98,7 @@ export async function updateLandlordRequestStatus(requestId: string, status: "AP
     });
   }
 
-  return await response.json();
+  return await safeJsonResponse(response);
 }
 
 // 5. Create Payment Intent (Tenant)
@@ -93,11 +106,20 @@ export async function createPayment(rentalRequestId: string, provider = "STRIPE"
   const baseUrl = getBaseUrl();
   const headers = await getAuthHeaders();
 
-  const response = await fetch(`${baseUrl}api/payments/create`, {
+  let response = await fetch(`${baseUrl}api/payments/create`, {
     method: "POST",
     headers,
     body: JSON.stringify({ rentalRequestId, provider }),
   });
 
-  return await response.json();
+  // Try fallback endpoint if 404
+  if (response.status === 404) {
+    response = await fetch(`${baseUrl}api/payments`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ rentalRequestId, provider }),
+    });
+  }
+
+  return await safeJsonResponse(response);
 }

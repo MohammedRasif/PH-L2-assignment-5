@@ -43,9 +43,8 @@ export default function DashboardSidebar({ user }: SidebarProps) {
       case "LANDLORD":
         return [
           { name: "Overview", href: "/landlord-dashboard", icon: LayoutDashboard },
-          { name: "My Properties", href: "/landlord-dashboard/my-properties", icon: Building2 },
-          { name: "Add Property", href: "/landlord-dashboard/add-property", icon: PlusCircle },
-          { name: "Rental Requests", href: "/landlord-dashboard/requests", icon: FileText },
+          { name: "Property Management", href: "/landlord-dashboard/my-properties", icon: Building2 },
+          { name: "Request Management", href: "/landlord-dashboard/requests", icon: FileText },
         ];
       case "TENANT":
       default:

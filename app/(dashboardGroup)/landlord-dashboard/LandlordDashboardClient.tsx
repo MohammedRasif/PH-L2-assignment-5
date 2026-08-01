@@ -21,12 +21,13 @@ import {
   Edit2,
   Trash2,
   MapPin,
-  FileText,
-  ArrowRight,
   X,
   AlertCircle,
+  Check,
+  ToggleLeft,
+  ToggleRight,
+  Link as LinkIcon,
 } from "lucide-react";
-import Link from "next/link";
 
 interface LandlordDashboardClientProps {
   user: any;
@@ -47,7 +48,7 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
   const [submittingProperty, setSubmittingProperty] = useState(false);
   const [modalError, setModalError] = useState("");
 
-  // Form State (EMPTY defaults)
+  // Form State
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState<number | "">("");
@@ -56,8 +57,9 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
   const [bathrooms, setBathrooms] = useState<number | "">("");
   const [categoryId, setCategoryId] = useState("");
   const [amenitiesInput, setAmenitiesInput] = useState("");
+  const [imageUrlInput, setImageUrlInput] = useState("");
   const [uploadedImageDataUrl, setUploadedImageDataUrl] = useState("");
-  const [isAvailable, setIsAvailable] = useState(true);
+  const [isAvailable, setIsAvailable] = useState<boolean>(true);
 
   // 1. Fetch Landlord Properties
   const fetchMyProperties = async () => {
@@ -100,7 +102,7 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
     fetchCategories();
   }, []);
 
-  // Open Modal for NEW Property (empty fields)
+  // Open Modal for NEW Property
   const handleOpenAddModal = () => {
     setEditingPropertyId(null);
     setTitle("");
@@ -110,6 +112,7 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
     setBedrooms("");
     setBathrooms("");
     setAmenitiesInput("");
+    setImageUrlInput("");
     setUploadedImageDataUrl("");
     setIsAvailable(true);
     setModalError("");
@@ -119,7 +122,7 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
     setIsModalOpen(true);
   };
 
-  // Open Modal for EDIT Property (pre-fill fields)
+  // Open Modal for EDIT Property
   const handleOpenEditModal = (property: any) => {
     setEditingPropertyId(property.id);
     setTitle(property.title || "");
@@ -132,9 +135,14 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
     setAmenitiesInput(
       Array.isArray(property.amenities) ? property.amenities.join(", ") : ""
     );
-    setUploadedImageDataUrl(
-      Array.isArray(property.images) && property.images.length > 0 ? property.images[0] : ""
-    );
+    const existingImg = Array.isArray(property.images) && property.images.length > 0 ? property.images[0] : "";
+    if (existingImg.startsWith("data:")) {
+      setUploadedImageDataUrl(existingImg);
+      setImageUrlInput("");
+    } else {
+      setImageUrlInput(existingImg);
+      setUploadedImageDataUrl("");
+    }
     setIsAvailable(property.isAvailable ?? true);
     setModalError("");
     setIsModalOpen(true);
@@ -147,12 +155,13 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
       const reader = new FileReader();
       reader.onloadend = () => {
         setUploadedImageDataUrl(reader.result as string);
+        setImageUrlInput("");
       };
       reader.readAsDataURL(file);
     }
   };
 
-  // Delete Property Handler with foreign key error handling & Toastify
+  // Delete Property Handler with Foreign Key error handling & Toastify
   const handleDeleteProperty = async (propertyId: string, propertyTitle: string) => {
     if (!confirm(`Are you sure you want to delete property "${propertyTitle}"?`)) {
       return;
@@ -167,14 +176,13 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
         setMyProperties((prev) => prev.filter((p) => p.id !== propertyId));
       } else {
         const rawMsg = res?.message || "";
-        // Check for Foreign Key constraint violation error
         if (
           rawMsg.includes("violates RESTRICT setting") ||
           rawMsg.includes("foreign key constraint") ||
           rawMsg.includes("rental_requests_propertyId_fkey")
         ) {
           toast.error(
-            `Cannot delete "${propertyTitle}" because active rental requests are attached to it. Please delete or resolve rental requests first!`
+            `Cannot delete "${propertyTitle}" because active rental requests exist for it. Remove associated requests first!`
           );
         } else {
           toast.error(rawMsg || "Failed to delete property.");
@@ -212,6 +220,10 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
     const images: string[] = [];
     if (uploadedImageDataUrl) {
       images.push(uploadedImageDataUrl);
+    } else if (imageUrlInput.trim()) {
+      images.push(imageUrlInput.trim());
+    } else {
+      images.push("https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80");
     }
 
     const payload = {
@@ -258,25 +270,25 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
 
   return (
     <div className="space-y-8">
-      {/* Header with Upload Property Button */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
-            Landlord Dashboard
+            Property Management
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Welcome back, <span className="font-semibold text-slate-800">{user.name}</span>. Manage your property listings and review tenant applications.
+            Create, edit, toggle availability, and remove your rental listings.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <button
+          {/* <button
             onClick={handleOpenAddModal}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-500/20 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
           >
             <PlusCircle className="w-4 h-4" />
             <span>Upload Property</span>
-          </button>
+          </button> */}
 
           {/* <button
             onClick={fetchMyProperties}
@@ -284,52 +296,34 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loadingProperties ? "animate-spin" : ""}`} />
-            <span>Refresh</span>
+            <span>Refresh List</span>
           </button> */}
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm flex items-center gap-4">
-          <div className="p-3.5 bg-blue-50 text-blue-600 rounded-xl">
-            <Building2 className="h-6 w-6" />
+      {/* Summary Stat Banner */}
+      <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="p-3.5 bg-blue-50 text-blue-600 rounded-2xl">
+            <Building2 className="h-7 w-7" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">My Properties</p>
-            <h3 className="text-2xl font-black text-slate-900 mt-1">{myPropertiesCount}</h3>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Managed Properties</p>
+            <h3 className="text-2xl font-black text-slate-900 mt-0.5">{myPropertiesCount}</h3>
           </div>
         </div>
-
-        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm flex items-center gap-4">
-          <div className="p-3.5 bg-emerald-50 text-emerald-600 rounded-xl">
-            <CheckCircle2 className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Status</p>
-            <h3 className="text-2xl font-black text-emerald-600 mt-1">Verified</h3>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm flex items-center gap-4 sm:col-span-2 lg:col-span-1">
-          <div className="p-3.5 bg-indigo-50 text-indigo-600 rounded-xl">
-            <User className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Role</p>
-            <h3 className="text-xl font-black text-slate-900 mt-1">{user.role}</h3>
-          </div>
+        <div className="text-right text-xs font-semibold text-slate-500">
+          <span className="text-emerald-600 font-extrabold">{myProperties.filter((p) => p.isAvailable).length} Available</span> •{" "}
+          <span className="text-rose-600 font-extrabold">{myProperties.filter((p) => !p.isAvailable).length} Occupied</span>
         </div>
       </div>
 
- 
-
-      {/* My Listed Properties Grid Section */}
+      {/* Listed Properties Cards Grid */}
       <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm space-y-6">
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <div>
-            <h2 className="text-lg font-extrabold text-slate-900">My Listed Properties</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Manage, edit, or delete your property listings</p>
+            <h2 className="text-lg font-extrabold text-slate-900">My Property Listings</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Manage, update details, or remove properties from the market</p>
           </div>
           <button
             onClick={handleOpenAddModal}
@@ -347,11 +341,11 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
             ))}
           </div>
         ) : myProperties.length === 0 ? (
-          <div className="text-center py-12 px-4">
+          <div className="text-center py-16 px-4">
             <span className="text-5xl block mb-3">🏡</span>
             <h3 className="text-lg font-bold text-slate-800">No Properties Listed Yet</h3>
             <p className="text-slate-500 text-sm mt-1 max-w-md mx-auto">
-              You haven't added any properties. Click "Upload Property" to create your first listing.
+              You haven't added any properties. Click "Upload Property" to list your first rental home.
             </p>
             <button
               onClick={handleOpenAddModal}
@@ -373,7 +367,7 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
                       {prop.category?.name || "Home"}
                     </span>
                     <span
-                      className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase ${
+                      className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase ${
                         prop.isAvailable ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"
                       }`}
                     >
@@ -439,7 +433,7 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
                     {editingPropertyId ? "Edit Property Listing" : "Upload New Property"}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    {editingPropertyId ? "Update property details below" : "Enter property details to list a new rental"}
+                    {editingPropertyId ? "Update property details and availability below" : "Enter property details to list a new rental"}
                   </p>
                 </div>
               </div>
@@ -595,42 +589,95 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
                 />
               </div>
 
-              {/* Device File Upload ONLY */}
-              <div className="space-y-2">
+              {/* UI for Image URL Uploads & Device Upload */}
+              <div className="space-y-3">
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Property Image (Upload from Device)
+                  Property Images (Image URL or Device Upload)
                 </label>
 
-                <div className="border-2 border-dashed border-slate-200 hover:border-blue-500 rounded-2xl p-5 text-center cursor-pointer transition-all bg-slate-50">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageFileChange}
-                    className="hidden"
-                    id="property-image-file"
-                  />
-                  <label htmlFor="property-image-file" className="cursor-pointer block">
-                    <ImageIcon className="w-8 h-8 text-blue-500 mx-auto mb-1" />
-                    <span className="text-xs font-bold text-blue-600 block">Click to Select Image from Device</span>
-                    <span className="text-[10px] text-slate-400">Supports PNG, JPG, WEBP</span>
-                  </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Option A: Image URL Upload */}
+                  <div>
+                    <div className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold mb-1">
+                      <LinkIcon className="w-3.5 h-3.5 text-blue-600" /> Image URL
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="e.g. https://images.unsplash.com/..."
+                      value={imageUrlInput}
+                      onChange={(e) => {
+                        setImageUrlInput(e.target.value);
+                        setUploadedImageDataUrl("");
+                      }}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs font-medium"
+                    />
+                  </div>
+
+                  {/* Option B: Device Upload */}
+                  <div>
+                    <div className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold mb-1">
+                      <ImageIcon className="w-3.5 h-3.5 text-blue-600" /> Device File Upload
+                    </div>
+                    <div className="border border-slate-200 hover:border-blue-500 rounded-xl p-2 text-center cursor-pointer transition-all bg-slate-50">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageFileChange}
+                        className="hidden"
+                        id="property-image-file"
+                      />
+                      <label htmlFor="property-image-file" className="cursor-pointer block">
+                        <span className="text-xs font-bold text-blue-600">Choose File</span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
 
                 {uploadedImageDataUrl && (
-                  <div className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 font-semibold">
-                    <div className="flex items-center gap-2">
-                      <span>🖼️</span>
-                      <span>Image attached</span>
-                    </div>
+                  <div className="flex items-center justify-between p-2 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 font-semibold">
+                    <span>🖼️ Attached Image File</span>
                     <button
                       type="button"
                       onClick={() => setUploadedImageDataUrl("")}
-                      className="text-xs text-red-600 font-bold hover:underline cursor-pointer"
+                      className="text-xs text-rose-600 font-bold hover:underline cursor-pointer"
                     >
                       Remove
                     </button>
                   </div>
                 )}
+              </div>
+
+              {/* Availability Toggle UI */}
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between">
+                <div>
+                  <label className="block text-xs font-extrabold text-slate-900">
+                    Property Availability Status
+                  </label>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Toggle whether this property is currently available for rent
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAvailable(!isAvailable)}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                    isAvailable
+                      ? "bg-emerald-500 text-white shadow-sm shadow-emerald-500/20"
+                      : "bg-rose-500 text-white shadow-sm shadow-rose-500/20"
+                  }`}
+                >
+                  {isAvailable ? (
+                    <>
+                      <ToggleRight className="w-5 h-5" />
+                      <span>Available</span>
+                    </>
+                  ) : (
+                    <>
+                      <ToggleLeft className="w-5 h-5" />
+                      <span>Occupied</span>
+                    </>
+                  )}
+                </button>
               </div>
 
               {/* Modal Footer */}
