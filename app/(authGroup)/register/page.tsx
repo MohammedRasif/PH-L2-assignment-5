@@ -1,25 +1,16 @@
-"use client"
+"use client";
 
 import React, { useState } from "react";
 import Link from "next/link";
 import { registerAction } from "../_actions/authActions";
+import { toast } from "react-toastify";
 
 export default function RegisterPage() {
-  const [name, setName] = useState("admin");
-  const [email, setEmail] = useState("admin@rentnest.com");
-  const [password, setPassword] = useState("admin123");
-  const [role, setRole] = useState("ADMIN");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState("TENANT");
   const [loading, setLoading] = useState(false);
-  
-  // Custom Toast State
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
-
-  const showToast = (message: string, type: "success" | "error") => {
-    setToast({ message, type });
-    setTimeout(() => {
-      setToast(null);
-    }, 4500);
-  };
 
   const getDashboardLink = (role?: string) => {
     switch (role) {
@@ -37,7 +28,7 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !email || !password || !role) {
-      showToast("Please fill in all fields", "error");
+      toast.error("Please fill in all required fields.");
       return;
     }
 
@@ -47,8 +38,8 @@ export default function RegisterPage() {
       const result = await registerAction({ name, email, password, role });
 
       if (result.success) {
-        showToast(result.message || "Registration completed successfully!", "success");
-        
+        toast.success(result.message || "Registration completed successfully!");
+
         const token = result.data?.accessToken;
         if (token) {
           // Fetch profile to verify role and set correct redirection
@@ -72,17 +63,17 @@ export default function RegisterPage() {
             }
           }
         }
-        
+
         // Default fallback redirect to login page
         setTimeout(() => {
           window.location.href = "/login";
         }, 1500);
 
       } else {
-        showToast(result.message || "Registration failed. Please try again.", "error");
+        toast.error(result.message || "Registration failed. Please try again.");
       }
     } catch (err: any) {
-      showToast(err.message || "An unexpected error occurred", "error");
+      toast.error(err.message || "An unexpected error occurred.");
     } finally {
       setLoading(false);
     }
@@ -90,42 +81,6 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-[85vh] flex-col justify-center py-12 sm:px-6 lg:px-8 bg-slate-50 relative">
-      {/* Toast Notification */}
-      {toast && (
-        <div
-          className={`fixed top-4 right-4 z-50 flex items-center gap-2 rounded-lg px-4 py-3 shadow-lg border transition-all duration-300 transform translate-y-0 animate-bounce ${
-            toast.type === "success"
-              ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-              : "bg-rose-50 border-rose-200 text-rose-800"
-          }`}
-        >
-          {toast.type === "success" ? (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="2.5"
-              stroke="currentColor"
-              className="h-5 w-5 text-emerald-600"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          ) : (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="2.5"
-              stroke="currentColor"
-              className="h-5 w-5 text-rose-600"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-            </svg>
-          )}
-          <span className="text-sm font-semibold">{toast.message}</span>
-        </div>
-      )}
-
       <div className="sm:mx-auto w-full max-w-md">
         <h2 className="mt-6 text-center text-3xl font-extrabold tracking-tight text-slate-900">
           Create your account
@@ -151,6 +106,7 @@ export default function RegisterPage() {
                   name="name"
                   type="text"
                   required
+                  placeholder="enter full name..."
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
@@ -169,6 +125,7 @@ export default function RegisterPage() {
                   type="email"
                   autoComplete="email"
                   required
+                  placeholder="enter email address..."
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
@@ -186,6 +143,7 @@ export default function RegisterPage() {
                   name="password"
                   type="password"
                   required
+                  placeholder="enter password..."
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
@@ -205,9 +163,9 @@ export default function RegisterPage() {
                   onChange={(e) => setRole(e.target.value)}
                   className="block w-full px-3 py-2 border border-slate-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
                 >
-                  <option value="ADMIN">ADMIN</option>
-                  <option value="LANDLORD">LANDLORD</option>
                   <option value="TENANT">TENANT</option>
+                  <option value="LANDLORD">LANDLORD</option>
+                  <option value="ADMIN">ADMIN</option>
                 </select>
               </div>
             </div>

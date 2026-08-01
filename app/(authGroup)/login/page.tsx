@@ -1,23 +1,14 @@
-"use client"
+"use client";
 
 import React, { useState } from "react";
 import Link from "next/link";
 import { loginAction } from "../_actions/authActions";
+import { toast } from "react-toastify";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("rasif2@gmail.com");
-  const [password, setPassword] = useState("123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // Custom Toast State
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
-
-  const showToast = (message: string, type: "success" | "error") => {
-    setToast({ message, type });
-    setTimeout(() => {
-      setToast(null);
-    }, 4000);
-  };
 
   const getDashboardLink = (role?: string) => {
     switch (role) {
@@ -35,7 +26,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      showToast("Please fill in all fields", "error");
+      toast.error("Please fill in all fields");
       return;
     }
 
@@ -45,7 +36,7 @@ export default function LoginPage() {
       const result = await loginAction({ email, password });
 
       if (result.success) {
-        showToast(result.message || "Logged in successfully!", "success");
+        toast.success(result.message || "Logged in successfully!");
 
         // Fetch user profile to get the role for correct redirection
         const token = result.data?.accessToken;
@@ -80,10 +71,10 @@ export default function LoginPage() {
         }, 1200);
 
       } else {
-        showToast(result.message || "Invalid credentials", "error");
+        toast.error(result.message || "Invalid credentials");
       }
     } catch (err: any) {
-      showToast(err.message || "An unexpected error occurred", "error");
+      toast.error(err.message || "An unexpected error occurred");
     } finally {
       setLoading(false);
     }
@@ -91,41 +82,6 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-[80vh] flex-col justify-center py-12 sm:px-6 lg:px-8 bg-slate-50 relative">
-      {/* Toast Notification */}
-      {toast && (
-        <div
-          className={`fixed top-4 right-4 z-50 flex items-center gap-2 rounded-lg px-4 py-3 shadow-lg border transition-all duration-300 transform translate-y-0 animate-bounce ${toast.type === "success"
-            ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-            : "bg-rose-50 border-rose-200 text-rose-800"
-            }`}
-        >
-          {toast.type === "success" ? (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="2.5"
-              stroke="currentColor"
-              className="h-5 w-5 text-emerald-600"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          ) : (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="2.5"
-              stroke="currentColor"
-              className="h-5 w-5 text-rose-600"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-            </svg>
-          )}
-          <span className="text-sm font-semibold">{toast.message}</span>
-        </div>
-      )}
-
       <div className="sm:mx-auto w-full max-w-md">
         <h2 className="mt-6 text-center text-3xl font-extrabold tracking-tight text-slate-900">
           Sign in to your account
@@ -152,6 +108,7 @@ export default function LoginPage() {
                   type="email"
                   autoComplete="email"
                   required
+                  placeholder="enter your email..."
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
@@ -170,6 +127,7 @@ export default function LoginPage() {
                   type="password"
                   autoComplete="current-password"
                   required
+                  placeholder="enter your password..."
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"

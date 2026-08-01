@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useTransition } from "react";
 import { updateUserStatusAction, getAdminUsersAction } from "../_actions/adminActions";
+import { toast } from "react-toastify";
 import { Search } from "lucide-react";
 
 interface UserProfile {
@@ -26,22 +27,19 @@ export default function UserTableClient() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isPending, startTransition] = useTransition();
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
 
   useEffect(() => {
     async function loadUsers() {
       setIsLoading(true);
-      setErrorMsg("");
       try {
         const res = await getAdminUsersAction();
         if (res.success && res.data) {
           setUsers(res.data);
         } else {
-          setErrorMsg(res.message || "Failed to load users list.");
+          toast.error(res.message || "Failed to load users list.");
         }
       } catch (err: any) {
-        setErrorMsg(err.message || "An error occurred while fetching users.");
+        toast.error(err.message || "An error occurred while fetching users.");
       } finally {
         setIsLoading(false);
       }
@@ -58,21 +56,20 @@ export default function UserTableClient() {
   const handleToggleStatus = (userId: string, currentStatus: string) => {
     const nextStatus = currentStatus === "ACTIVE" ? "BLOCKED" : "ACTIVE";
     setLoadingUserId(userId);
-    setErrorMsg("");
-    setSuccessMsg("");
 
     startTransition(async () => {
       try {
         const res = await updateUserStatusAction(userId, nextStatus);
         if (res.success) {
-          setUsers(prev => prev.map(u => u.id === userId ? { ...u, activeStatus: nextStatus } : u));
-          setSuccessMsg(res.message || `User status updated to ${nextStatus} successfully.`);
-          setTimeout(() => setSuccessMsg(""), 3500);
+          setUsers((prev) =>
+            prev.map((u) => (u.id === userId ? { ...u, activeStatus: nextStatus } : u))
+          );
+          toast.success(res.message || `User status updated to ${nextStatus} successfully.`);
         } else {
-          setErrorMsg(res.message || "Failed to update user status.");
+          toast.error(res.message || "Failed to update user status.");
         }
       } catch (err: any) {
-        setErrorMsg(err.message || "An error occurred.");
+        toast.error(err.message || "An error occurred during status update.");
       } finally {
         setLoadingUserId(null);
       }
@@ -89,18 +86,6 @@ export default function UserTableClient() {
           </p>
         </div>
       </div>
-
-      {successMsg && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-sm font-semibold animate-pulse">
-          ✅ {successMsg}
-        </div>
-      )}
-
-      {errorMsg && (
-        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-sm font-semibold">
-          ❌ {errorMsg}
-        </div>
-      )}
 
       {/* Filter and Search controls */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -157,10 +142,10 @@ export default function UserTableClient() {
                           <div className="text-[10px] text-slate-400 font-mono select-all truncate max-w-[120px]">{user.id}</div>
                         </div>
                       </td>
-                      
+
                       {/* Email */}
                       <td className="py-4 px-6 select-all font-semibold text-slate-800">{user.email}</td>
-                      
+
                       {/* Role */}
                       <td className="py-4 px-6">
                         <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
