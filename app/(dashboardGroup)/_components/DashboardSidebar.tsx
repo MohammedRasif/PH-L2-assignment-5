@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { logout } from "@/app/service/logout";
+import Image from "next/image";
 
 interface SidebarProps {
   user?: any;
@@ -68,24 +69,10 @@ export default function DashboardSidebar({ user }: SidebarProps) {
     <>
       <div className="space-y-6">
         {/* Brand header */}
-        <div className="px-2 pt-1 pb-2 border-b border-slate-100 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2" onClick={() => setMobileOpen(false)}>
-            <span className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-extrabold text-sm shadow-md shadow-blue-500/20">
-              R
-            </span>
-            <span className="font-extrabold text-slate-900 tracking-tight text-lg">
-              Rent<span className="text-blue-600">Nest</span>
-            </span>
-          </Link>
-          <Link
-            href="/"
-            title="Return to site"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all text-xs flex items-center gap-1"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </div>
-
+       
+ <div>
+  <Image src="/logo.svg" alt="Logo" width={90}  height={90}  />
+ </div>
         {/* Portal navigation links */}
         <div>
           <span className="px-3 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">

@@ -165,7 +165,6 @@ export default function RegisterPage() {
                 >
                   <option value="TENANT">TENANT</option>
                   <option value="LANDLORD">LANDLORD</option>
-                  <option value="ADMIN">ADMIN</option>
                 </select>
               </div>
             </div>

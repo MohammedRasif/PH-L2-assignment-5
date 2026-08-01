@@ -87,24 +87,7 @@ export default function UserTableClient() {
         </div>
       </div>
 
-      {/* Filter and Search controls */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="relative max-w-sm w-full">
-          <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-            <Search className="h-4 w-4" />
-          </span>
-          <input
-            type="text"
-            placeholder="Search users by name, email or role..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all"
-          />
-        </div>
-        <div className="text-xs text-slate-500 font-medium">
-          Found {filteredUsers.length} total users
-        </div>
-      </div>
+     
 
       {/* Table container */}
       {isLoading ? (
