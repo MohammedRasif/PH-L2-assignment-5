@@ -136,14 +136,14 @@ export default function LandlordRequestsClient({ user }: LandlordRequestsClientP
           </p>
         </div>
 
-        <button
+        {/* <button
           onClick={fetchLandlordRequests}
           disabled={loading}
           className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50 self-start md:self-auto"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
           <span>Refresh Applications</span>
-        </button>
+        </button> */}
       </div>
 
       {/* Summary Cards */}
@@ -198,7 +198,7 @@ export default function LandlordRequestsClient({ user }: LandlordRequestsClientP
           </div>
 
           {/* Filter Tabs */}
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl overflow-x-auto">
+          {/* <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl overflow-x-auto">
             {(["ALL", "PENDING", "APPROVED", "REJECTED", "COMPLETED"] as const).map((tab) => (
               <button
                 key={tab}
@@ -212,7 +212,7 @@ export default function LandlordRequestsClient({ user }: LandlordRequestsClientP
                 {tab.toLowerCase()}
               </button>
             ))}
-          </div>
+          </div> */}
         </div>
 
         {error && (

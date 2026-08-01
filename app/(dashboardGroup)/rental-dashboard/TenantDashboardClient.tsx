@@ -114,14 +114,7 @@ export default function TenantDashboardClient({ user }: TenantDashboardClientPro
             Welcome back, <span className="font-semibold text-slate-800">{user.name}</span>. Track your rental requests and manage property payments.
           </p>
         </div>
-        <button
-          onClick={fetchRequests}
-          disabled={loading}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50 self-start md:self-auto"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-          <span>Refresh Requests</span>
-        </button>
+        
       </div>
 
       {/* Summary Cards */}

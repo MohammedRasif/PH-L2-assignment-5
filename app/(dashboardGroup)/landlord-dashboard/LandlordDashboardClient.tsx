@@ -278,14 +278,14 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
             <span>Upload Property</span>
           </button>
 
-          <button
+          {/* <button
             onClick={fetchMyProperties}
             disabled={loadingProperties}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loadingProperties ? "animate-spin" : ""}`} />
             <span>Refresh</span>
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -322,26 +322,7 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
         </div>
       </div>
 
-      {/* BANNER: Link to Incoming Tenant Applications Route */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-blue-200">
-            <FileText className="w-4 h-4" />
-            <span>Applications Portal</span>
-          </div>
-          <h3 className="text-xl font-bold">Incoming Tenant Applications</h3>
-          <p className="text-xs text-blue-100 max-w-xl">
-            Review, approve, or reject rental requests submitted by prospective tenants on a dedicated management screen.
-          </p>
-        </div>
-        <Link
-          href="/landlord-dashboard/requests"
-          className="px-5 py-3 bg-white text-blue-700 hover:bg-blue-50 font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 shrink-0 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-        >
-          <span>View Tenant Applications</span>
-          <ArrowRight className="w-4 h-4" />
-        </Link>
-      </div>
+ 
 
       {/* My Listed Properties Grid Section */}
       <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm space-y-6">
