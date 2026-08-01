@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { createRentalRequestAction } from "@/app/actions/requestActions";
 
 interface Category {
   id: string;
@@ -40,9 +41,10 @@ interface PropertyClientProps {
     bedrooms?: string;
     amenities?: string;
   };
+  currentUser?: any;
 }
 
-export default function PropertyClient({ initialProperties, activeFilters }: PropertyClientProps) {
+export default function PropertyClient({ initialProperties, activeFilters, currentUser }: PropertyClientProps) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -51,6 +53,38 @@ export default function PropertyClient({ initialProperties, activeFilters }: Pro
   const [selectedCategory, setSelectedCategory] = useState(activeFilters.categoryId || "all");
   const [maxPrice, setMaxPrice] = useState(activeFilters.maxPrice || "");
   const [minBedrooms, setMinBedrooms] = useState(activeFilters.bedrooms || "all");
+
+  // Rental request tracking state
+  const [loadingPropertyId, setLoadingPropertyId] = useState<string | null>(null);
+  const [requestedIds, setRequestedIds] = useState<Set<string>>(new Set());
+  const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  const handleSubmitRentRequest = async (propertyId: string, propertyTitle: string) => {
+    setLoadingPropertyId(propertyId);
+    setNotification(null);
+    try {
+      const res = await createRentalRequestAction(propertyId);
+      if (res?.success) {
+        setRequestedIds((prev) => new Set(prev).add(propertyId));
+        setNotification({
+          type: "success",
+          message: res.message || `Rental request for "${propertyTitle}" submitted successfully!`,
+        });
+      } else {
+        setNotification({
+          type: "error",
+          message: res?.message || "Failed to submit rental request.",
+        });
+      }
+    } catch (err: any) {
+      setNotification({
+        type: "error",
+        message: err.message || "An error occurred while submitting rental request.",
+      });
+    } finally {
+      setLoadingPropertyId(null);
+    }
+  };
 
   const [availableCategories] = useState(() => {
     const map = new Map<string, string>(); 
@@ -108,6 +142,28 @@ export default function PropertyClient({ initialProperties, activeFilters }: Pro
             Browse through our premium, verified property listings. Real-time updates directly from landlords and owners.
           </p>
         </div>
+
+        {/* Global Notification Banner */}
+        {notification && (
+          <div
+            className={`mb-8 p-4 rounded-xl border flex items-center justify-between shadow-sm transition-all animate-fadeIn ${
+              notification.type === "success"
+                ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                : "bg-rose-50 border-rose-200 text-rose-800"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-xl">{notification.type === "success" ? "✅" : "⚠️"}</span>
+              <p className="text-sm font-semibold">{notification.message}</p>
+            </div>
+            <button
+              onClick={() => setNotification(null)}
+              className="text-xs font-bold px-2 py-1 rounded hover:bg-black/5"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* Search and Filters Card */}
         <form onSubmit={handleSearch} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-10">
@@ -252,6 +308,35 @@ export default function PropertyClient({ initialProperties, activeFilters }: Pro
                           </span>
                         ))}
                       </div>
+                    </div>
+                  )}
+
+                  {/* Submit Rent Request Button for TENANT role */}
+                  {currentUser?.role === "TENANT" && (
+                    <div className="mt-auto pt-4 border-t border-slate-100">
+                      <button
+                        type="button"
+                        disabled={loadingPropertyId === property.id || requestedIds.has(property.id)}
+                        onClick={() => handleSubmitRentRequest(property.id, property.title)}
+                        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-emerald-600 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed hover:scale-[1.01] active:scale-[0.99]"
+                      >
+                        {loadingPropertyId === property.id ? (
+                          <>
+                            <span className="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent text-white rounded-full"></span>
+                            <span>Submitting Request...</span>
+                          </>
+                        ) : requestedIds.has(property.id) ? (
+                          <>
+                            <span>✓</span>
+                            <span>Request Sent</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>📩</span>
+                            <span>Submit Rent Request</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                   )}
                 </div>

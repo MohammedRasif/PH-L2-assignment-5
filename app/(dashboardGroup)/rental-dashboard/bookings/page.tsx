@@ -1,19 +1,17 @@
 import React from "react";
 import { getMe } from "@/app/service/getMe";
 import { redirect } from "next/navigation";
-import TenantDashboardClient from "./TenantDashboardClient";
+import TenantDashboardClient from "../TenantDashboardClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function TenantDashboardPage() {
+export default async function TenantBookingsPage() {
   const user = await getMe();
 
-  // Check authentication
   if (!user) {
     redirect("/login");
   }
 
-  // Ensure role is TENANT
   if (user.role !== "TENANT") {
     redirect("/");
   }

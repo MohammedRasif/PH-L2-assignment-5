@@ -60,7 +60,7 @@ function Navbar({ user }: NavbarProps) {
           {/* Desktop Navigation & Actions */}
           <div className="hidden md:flex items-center gap-6">
             <Link
-              href="/properties"
+              href="/property"
               className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors"
             >
               Properties

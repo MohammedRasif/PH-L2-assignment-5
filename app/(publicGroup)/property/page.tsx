@@ -1,5 +1,6 @@
 import { getProperties } from "@/app/service/propertyService";
-import PropertyClient from "../PropertyClient";
+import PropertyClient from "../_components/PropertyClient";
+import { getMe } from "@/app/service/getMe";
 
 // Force Next.js to skip static caching so the data refreshes instantly when the page is reloaded
 export const dynamic = "force-dynamic";
@@ -18,6 +19,7 @@ interface PropertyPageProps {
 
 export default async function PropertyPage({ searchParams }: PropertyPageProps) {
   const resolvedParams = await searchParams;
+  const user = await getMe();
 
   const filters = {
     location: resolvedParams.location || undefined,
@@ -35,6 +37,7 @@ export default async function PropertyPage({ searchParams }: PropertyPageProps) 
     <PropertyClient 
       initialProperties={properties} 
       activeFilters={resolvedParams}
+      currentUser={user}
     />
   );
 }
