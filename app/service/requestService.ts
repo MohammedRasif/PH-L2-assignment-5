@@ -123,3 +123,18 @@ export async function createPayment(rentalRequestId: string, provider = "STRIPE"
 
   return await safeJsonResponse(response);
 }
+
+// 6. Create Review POST {{base_url}}/api/reviews
+export async function createReview(propertyId: string, rating: number, comment: string) {
+  const baseUrl = getBaseUrl();
+  const headers = await getAuthHeaders();
+
+  const response = await fetch(`${baseUrl}api/reviews`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ propertyId, rating, comment }),
+  });
+
+  return await safeJsonResponse(response);
+}
+

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { createRentalRequestAction } from "@/app/actions/requestActions";
+import { createRentalRequestAction, createPaymentAction, createReviewAction } from "@/app/actions/requestActions";
 import { toast } from "react-toastify";
 
 interface Category {
@@ -18,6 +18,17 @@ interface Owner {
   activeStatus: string;
 }
 
+interface Review {
+  id?: string;
+  comment: string;
+  rating: number;
+  createdAt?: string;
+  tenant?: {
+    name: string;
+    email?: string;
+  };
+}
+
 interface Property {
   id: string;
   title: string;
@@ -31,6 +42,7 @@ interface Property {
   isAvailable: boolean;
   category: Category;
   owner: Owner;
+  reviews?: Review[];
 }
 
 interface PropertyDetailsClientProps {
@@ -50,17 +62,27 @@ export default function PropertyDetailsClient({
   });
 
   const [loadingRequest, setLoadingRequest] = useState(false);
-  const [requestStatus, setRequestStatus] = useState<string | null>(() => {
-    const matchingReq = initialTenantRequests.find((req) => req.propertyId === property.id);
-    return matchingReq ? matchingReq.status : null;
+  const [matchingRequest, setMatchingRequest] = useState<any>(() => {
+    return initialTenantRequests.find((req) => req.propertyId === property.id);
   });
+  const requestStatus = matchingRequest?.status || null;
+
+  // Direct payment trigger state
+  const [paying, setPaying] = useState(false);
+
+  // Review states
+  const [reviews, setReviews] = useState<Review[]>(() => property.reviews || []);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   const handleRequestRent = async () => {
     setLoadingRequest(true);
     try {
       const res = await createRentalRequestAction(property.id);
       if (res?.success) {
-        setRequestStatus("PENDING");
+        setMatchingRequest(res.data);
         toast.success(res.message || `Rental request submitted successfully!`);
       } else {
         toast.error(res?.message || "Failed to submit rental request.");
@@ -69,6 +91,59 @@ export default function PropertyDetailsClient({
       toast.error(err.message || "An error occurred while submitting rental request.");
     } finally {
       setLoadingRequest(false);
+    }
+  };
+
+  const handlePay = async () => {
+    if (!matchingRequest?.id) return;
+    setPaying(true);
+    try {
+      const res = await createPaymentAction(matchingRequest.id, "STRIPE");
+      if (res?.success && res.data?.checkoutUrl) {
+        toast.info("Redirecting to Stripe checkout session...");
+        window.location.href = res.data.checkoutUrl;
+      } else {
+        toast.error(res?.message || "Failed to create payment checkout session.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "An error occurred during payment setup.");
+    } finally {
+      setPaying(false);
+    }
+  };
+
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!comment.trim()) {
+      toast.error("Please write a comment.");
+      return;
+    }
+    setSubmittingReview(true);
+    try {
+      const res = await createReviewAction(property.id, rating, comment);
+      if (res?.success) {
+        toast.success(res.message || "Review submitted successfully!");
+        setReviews((prev) => [
+          ...prev,
+          {
+            rating,
+            comment,
+            tenant: {
+              name: currentUser?.name || "Verified Tenant",
+              email: currentUser?.email || "",
+            },
+            createdAt: new Date().toISOString(),
+          },
+        ]);
+        setComment("");
+        setShowReviewForm(false);
+      } else {
+        toast.error(res?.message || "Failed to submit review.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "An error occurred while submitting review.");
+    } finally {
+      setSubmittingReview(false);
     }
   };
 
@@ -100,7 +175,6 @@ export default function PropertyDetailsClient({
                   />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center bg-slate-100 text-slate-450">
-                    <span className="text-8xl mb-3">🏡</span>
                     <span className="text-sm font-bold tracking-wide uppercase">No Image Available</span>
                   </div>
                 )}
@@ -203,6 +277,61 @@ export default function PropertyDetailsClient({
                 </div>
               )}
             </div>
+
+            {/* Reviews Section */}
+            <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-xs space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <h3 className="text-xl font-extrabold text-slate-900">
+                  Tenant Reviews ({reviews.length})
+                </h3>
+                {reviews.length > 0 && (
+                  <div className="flex items-center gap-1 bg-amber-50 text-amber-700 px-3 py-1 rounded-xl text-sm font-bold border border-amber-100">
+                    <span>★</span>
+                    <span>
+                      {(reviews.reduce((acc, curr) => acc + curr.rating, 0) / reviews.length).toFixed(1)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Reviews List */}
+              {reviews.length === 0 ? (
+                <div className="text-center py-6 text-slate-400 text-sm">
+                  <span className="text-4xl block mb-2">⭐</span>
+                  No reviews yet. Be the first to leave a review after your lease is active and completed!
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {reviews.map((rev, idx) => (
+                    <div key={idx} className="py-4 first:pt-0 last:pb-0 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-650 text-xs border border-slate-200">
+                            {rev.tenant?.name ? rev.tenant.name.charAt(0).toUpperCase() : "T"}
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-slate-800 text-sm">
+                              {rev.tenant?.name || "Verified Tenant"}
+                            </h4>
+                            <p className="text-[10px] text-slate-400">
+                              {rev.createdAt ? new Date(rev.createdAt).toLocaleDateString() : "Recent"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-0.5 text-amber-500 text-sm font-bold">
+                          {[...Array(5)].map((_, i) => (
+                            <span key={i} className={i < rev.rating ? "text-amber-500" : "text-slate-200"}>★</span>
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-slate-650 text-sm pl-10 leading-relaxed italic">
+                        "{rev.comment}"
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right Column: Landlord info and Actions panel */}
@@ -247,20 +376,98 @@ export default function PropertyDetailsClient({
                           <div className="bg-emerald-50 text-emerald-800 border border-emerald-250 font-bold py-3.5 px-4 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs">
                             <span>🎉</span> Request Approved!
                           </div>
-                          <Link
-                            href="/rental-dashboard"
-                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.01] active:scale-[0.99]"
+                          <button
+                            type="button"
+                            disabled={paying}
+                            onClick={handlePay}
+                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                           >
-                            Go to Dashboard to Pay →
-                          </Link>
+                            {paying ? (
+                              <>
+                                <span className="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent text-white rounded-full"></span>
+                                <span>Processing...</span>
+                              </>
+                            ) : (
+                              <>
+                                <span>💳</span>
+                                <span>Pay Now</span>
+                              </>
+                            )}
+                          </button>
                         </div>
                       );
                     }
 
                     if (requestStatus === "COMPLETED") {
+                      const hasReviewed = reviews.some(
+                        (rev) =>
+                          rev.tenant?.email === currentUser?.email ||
+                          rev.tenant?.name === currentUser?.name
+                      );
+
                       return (
-                        <div className="bg-blue-50 text-blue-800 border border-blue-200 font-bold py-3.5 px-4 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs">
-                          <span>✓</span> Rent Lease Active / Paid
+                        <div className="space-y-4">
+                          <div className="bg-blue-50 text-blue-800 border border-blue-250 font-bold py-3 px-4 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs">
+                            <span>✓</span> Rent Lease Active / Paid
+                          </div>
+
+                          {!hasReviewed ? (
+                            !showReviewForm ? (
+                              <button
+                                type="button"
+                                onClick={() => setShowReviewForm(true)}
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl text-sm flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer animate-pulse"
+                              >
+                                ✍️ Give Review
+                              </button>
+                            ) : (
+                              <form onSubmit={handleReviewSubmit} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Leave a Review</h4>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs text-slate-500 font-semibold">Rating:</span>
+                                  <div className="flex gap-1">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                      <button
+                                        key={star}
+                                        type="button"
+                                        onClick={() => setRating(star)}
+                                        className="text-lg focus:outline-none transition-transform hover:scale-110"
+                                      >
+                                        <span className={star <= rating ? "text-amber-500" : "text-slate-200"}>★</span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                                <textarea
+                                  placeholder="Write your review here..."
+                                  value={comment}
+                                  onChange={(e) => setComment(e.target.value)}
+                                  className="w-full p-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                                  rows={3}
+                                />
+                                <div className="flex gap-2">
+                                  <button
+                                    type="submit"
+                                    disabled={submittingReview}
+                                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg text-xs transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+                                  >
+                                    {submittingReview ? "Submitting..." : "Submit"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowReviewForm(false)}
+                                    className="px-3 border border-slate-200 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-500 transition-all cursor-pointer"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </form>
+                            )
+                          ) : (
+                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center text-xs font-semibold text-slate-500 italic">
+                              Thank you for leaving a review! ⭐
+                            </div>
+                          )}
                         </div>
                       );
                     }

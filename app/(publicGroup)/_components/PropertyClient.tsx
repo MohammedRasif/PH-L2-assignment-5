@@ -247,7 +247,6 @@ export default function PropertyClient({
                       />
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center bg-slate-100 text-slate-450 group-hover:scale-105 transition-transform duration-500 ease-out">
-                        <span className="text-5xl mb-2">🏡</span>
                         <span className="text-xs font-bold tracking-wide uppercase">No Image Available</span>
                       </div>
                     )}

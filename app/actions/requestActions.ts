@@ -7,7 +7,9 @@ import {
   getLandlordRequests,
   updateLandlordRequestStatus,
   createPayment,
+  createReview,
 } from "@/app/service/requestService";
+
 
 export async function createRentalRequestAction(propertyId: string) {
   try {
@@ -76,3 +78,20 @@ export async function createPaymentAction(rentalRequestId: string, provider = "S
     };
   }
 }
+
+export async function createReviewAction(propertyId: string, rating: number, comment: string) {
+  try {
+    const result = await createReview(propertyId, rating, comment);
+    if (result?.success) {
+      revalidatePath("/property");
+      revalidatePath("/rental-dashboard");
+    }
+    return result;
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.message || "Failed to submit review.",
+    };
+  }
+}
+
