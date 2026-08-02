@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { loginAction } from "../_actions/authActions";
 import { toast } from "react-toastify";
 
@@ -9,6 +10,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const getDashboardLink = (role?: string) => {
     switch (role) {
@@ -58,7 +60,7 @@ export default function LoginPage() {
 
               // Delay redirect slightly so user sees success toast
               setTimeout(() => {
-                window.location.href = targetPath;
+                router.push(targetPath);
               }, 1200);
               return;
             }
@@ -67,7 +69,7 @@ export default function LoginPage() {
 
         // Fallback redirection if profile fetch fails
         setTimeout(() => {
-          window.location.href = "/";
+          router.push("/");
         }, 1200);
 
       } else {
@@ -150,9 +152,9 @@ export default function LoginPage() {
               </div>
 
               <div className="text-xs">
-                <a href="#" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
+                <Link href="#" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
                   Forgot password?
-                </a>
+                </Link>
               </div>
             </div>
 

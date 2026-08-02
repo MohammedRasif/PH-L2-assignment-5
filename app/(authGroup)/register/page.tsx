@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { registerAction } from "../_actions/authActions";
 import { toast } from "react-toastify";
 
@@ -11,6 +12,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("TENANT");
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const getDashboardLink = (role?: string) => {
     switch (role) {
@@ -57,7 +59,7 @@ export default function RegisterPage() {
               const userRole = profileResult.data?.profile?.role || role;
               const targetPath = getDashboardLink(userRole);
               setTimeout(() => {
-                window.location.href = targetPath;
+                router.push(targetPath);
               }, 1500);
               return;
             }
@@ -66,7 +68,7 @@ export default function RegisterPage() {
 
         // Default fallback redirect to login page
         setTimeout(() => {
-          window.location.href = "/login";
+          router.push("/login");
         }, 1500);
 
       } else {

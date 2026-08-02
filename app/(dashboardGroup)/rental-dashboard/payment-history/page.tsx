@@ -59,9 +59,9 @@ export default async function TenantPaymentHistoryPage() {
               <tbody className="divide-y divide-slate-100 bg-white">
                 {completedPayments.map((req: any) => (
                   <tr key={req.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4 font-bold text-slate-800">{req.property?.title || "Property"}</td>
-                    <td className="px-6 py-4 font-mono text-xs text-slate-500">{req.payment?.transactionId || "N/A"}</td>
-                    <td className="px-6 py-4 font-extrabold text-emerald-650">৳ {req.payment?.amount?.toLocaleString()} BDT</td>
+                    <td className="px-6 py-4 font-bold text-slate-800 break-words">{req.property?.title || "Property"}</td>
+                    <td className="px-6 py-4 font-mono text-xs text-slate-500 break-all">{req.payment?.transactionId || "N/A"}</td>
+                    <td className="px-6 py-4 font-extrabold text-emerald-600">৳ {req.payment?.amount?.toLocaleString()} BDT</td>
                     <td className="px-6 py-4 text-xs font-bold text-slate-600">{req.payment?.provider || "STRIPE"}</td>
                     <td className="px-6 py-4 text-slate-500 text-xs">
                       {new Date(req.payment?.createdAt || req.updatedAt).toLocaleDateString()}

@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { logout } from "@/app/service/logout";
 
 interface NavbarProps {
@@ -9,12 +10,13 @@ interface NavbarProps {
 }
 
 function Navbar({ user }: NavbarProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
 
   const handleLogout = async () => {
     const res = await logout();
     if (res.success) {
-      window.location.href = "/login";
+      router.push("/login");
     }
   };
 
@@ -66,7 +68,7 @@ function Navbar({ user }: NavbarProps) {
               Properties
             </Link>
 
-            <a
+            <Link
               href="tel:+18005550199"
               className="flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
             >
@@ -85,7 +87,7 @@ function Navbar({ user }: NavbarProps) {
                 />
               </svg>
               <span>+1 (800) 555-0199</span>
-            </a>
+            </Link>
 
             <div className="h-4 w-px bg-slate-200" />
 
@@ -217,7 +219,7 @@ function Navbar({ user }: NavbarProps) {
               Properties
             </Link>
 
-            <a
+            <Link
               href="tel:+18005550199"
               className="flex items-center gap-2 rounded-lg px-3 py-2 text-base font-medium text-slate-700 hover:bg-slate-50 transition-all"
               onClick={() => setIsOpen(false)}
@@ -237,7 +239,7 @@ function Navbar({ user }: NavbarProps) {
                 />
               </svg>
               <span>+1 (800) 555-0199</span>
-            </a>
+            </Link>
 
             <button
               onClick={() => setIsOpen(false)}

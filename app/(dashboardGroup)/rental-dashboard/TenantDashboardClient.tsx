@@ -298,21 +298,21 @@ function TenantRequestCard({
           <h3 className="text-xl font-bold text-slate-900">{prop.title || "Property Details"}</h3>
           <p className="text-sm text-slate-600 line-clamp-2 leading-relaxed">{prop.description}</p>
 
-          <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-650 pt-1">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs font-semibold text-slate-600 pt-1">
             <span className="flex items-center gap-1">📍 {prop.location || "N/A"}</span>
-            <span>•</span>
+            <span className="hidden sm:inline">•</span>
             <span className="flex items-center gap-1">🛏️ {prop.bedrooms || 0} Beds</span>
-            <span>•</span>
+            <span className="hidden sm:inline">•</span>
             <span className="flex items-center gap-1">🚿 {prop.bathrooms || 0} Baths</span>
-            <span>•</span>
-            <span className="text-blue-650 font-extrabold text-sm">৳ {prop.price?.toLocaleString()} / month</span>
+            <span className="hidden sm:inline">•</span>
+            <span className="text-blue-600 font-extrabold text-sm">৳ {prop.price?.toLocaleString()} / month</span>
           </div>
         </div>
 
         {/* Price and Action Section */}
         <div className="flex flex-col items-start lg:items-end justify-between border-t lg:border-t-0 pt-4 lg:pt-0 border-slate-100 shrink-0">
           <div className="text-left lg:text-right mb-3">
-            <span className="text-xs text-slate-450 uppercase tracking-wider font-semibold block">Monthly Price</span>
+            <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold block">Monthly Price</span>
             <span className="text-2xl font-black text-slate-900">৳ {prop.price?.toLocaleString()}</span>
           </div>
 
@@ -348,7 +348,7 @@ function TenantRequestCard({
             <span className="text-2xl font-sans">🎉</span>
             <div>
               <p className="text-sm font-bold">Landlord accepted your request!</p>
-              <p className="text-xs text-emerald-850 mt-0.5">
+              <p className="text-xs text-emerald-800 mt-0.5">
                 Please complete the payment above to finalize your rental agreement.
               </p>
             </div>
@@ -364,13 +364,13 @@ function TenantRequestCard({
 
       {/* Payment Info display if COMPLETED */}
       {isCompleted && req.payment && (
-        <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs">
-          <div className="flex items-center gap-2">
+        <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="font-bold text-emerald-600">✓ Payment Received</span>
             <span className="text-slate-400">•</span>
-            <span className="font-mono text-slate-555">Txn: {req.payment.transactionId}</span>
+            <span className="font-mono text-slate-500 break-all">Txn: {req.payment.transactionId}</span>
           </div>
-          <div className="flex items-center gap-3 font-semibold text-slate-700">
+          <div className="flex flex-wrap items-center gap-3 font-semibold text-slate-700">
             <span>Paid: ৳ {req.payment.amount?.toLocaleString()}</span>
             <span>Provider: {req.payment.provider}</span>
           </div>

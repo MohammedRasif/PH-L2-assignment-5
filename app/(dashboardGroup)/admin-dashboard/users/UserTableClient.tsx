@@ -101,7 +101,7 @@ export default function UserTableClient() {
         <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="overflow-x-auto w-full">
             <table className="min-w-full divide-y divide-slate-100 text-left text-sm whitespace-nowrap">
-              <thead className="bg-slate-55/70 text-slate-500 text-xs font-bold uppercase tracking-wider">
+              <thead className="bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider">
                 <tr>
                   <th className="py-4 px-6">Name</th>
                   <th className="py-4 px-6">Email</th>

@@ -167,7 +167,7 @@ export default function PropertyDetailsClient({
           <div className="lg:col-span-2 space-y-8">
             {/* Beautiful Image Gallery */}
             <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-xs space-y-4">
-              <div className="h-[450px] w-full rounded-2xl overflow-hidden bg-slate-100 relative select-none">
+              <div className="h-[260px] sm:h-[380px] md:h-[450px] w-full rounded-2xl overflow-hidden bg-slate-100 relative select-none">
                 {activeImage ? (
                   <img
                     src={activeImage}

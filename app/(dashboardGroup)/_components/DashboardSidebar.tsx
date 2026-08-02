@@ -2,7 +2,7 @@
 
 import React, { useState, useTransition } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
@@ -26,6 +26,7 @@ interface SidebarProps {
 
 export default function DashboardSidebar({ user }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -61,7 +62,7 @@ export default function DashboardSidebar({ user }: SidebarProps) {
   const handleLogout = () => {
     startTransition(async () => {
       await logout();
-      window.location.href = "/login";
+      router.push("/login");
     });
   };
 
@@ -69,10 +70,11 @@ export default function DashboardSidebar({ user }: SidebarProps) {
     <>
       <div className="space-y-6">
         {/* Brand header */}
-       
- <div>
-  <Image src="/logo.svg" alt="Logo" width={90}  height={90}  />
- </div>
+        <div>
+          <Link href="/" className="inline-block">
+            <Image src="/logo.svg" alt="Logo" width={110} height={40} style={{ height: "auto" }} priority />
+          </Link>
+        </div>
         {/* Portal navigation links */}
         <div>
           <span className="px-3 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
@@ -86,11 +88,12 @@ export default function DashboardSidebar({ user }: SidebarProps) {
                 <Link
                   key={link.name}
                   href={link.href}
+                  prefetch={true}
                   onClick={() => setMobileOpen(false)}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all ${
                     isActive
                       ? "bg-blue-50 text-blue-600 shadow-sm"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                      : "text-slate-600 hover:bg-slate-900/5 hover:text-slate-900"
                   }`}
                 >
                   <Icon className={`h-4 w-4 ${isActive ? "text-blue-600" : "text-slate-400"}`} />
@@ -134,13 +137,8 @@ export default function DashboardSidebar({ user }: SidebarProps) {
     <>
       {/* Mobile Top Navigation Header */}
       <div className="md:hidden flex items-center justify-between bg-white border-b border-slate-200 px-4 py-3 sticky top-0 z-40 w-full shadow-sm">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-extrabold text-sm">
-            R
-          </span>
-          <span className="font-extrabold text-slate-900 tracking-tight text-lg">
-            Rent<span className="text-blue-600">Nest</span>
-          </span>
+        <Link href="/" className="flex items-center">
+          <Image src="/logo.svg" alt="Logo" width={100} height={35} style={{ height: "auto" }} priority />
         </Link>
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
