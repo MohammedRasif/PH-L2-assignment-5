@@ -51,7 +51,7 @@ export default function DashboardSidebar({ user }: SidebarProps) {
       default:
         return [
           { name: "My Dashboard", href: "/rental-dashboard", icon: LayoutDashboard },
-          { name: "My Bookings", href: "/rental-dashboard/bookings", icon: Calendar },
+          { name: "Payment History", href: "/rental-dashboard/payment-history", icon: Calendar },
         ];
     }
   };

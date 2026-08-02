@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { getTenantRequestsAction, createPaymentAction, createReviewAction } from "@/app/actions/requestActions";
 import { toast } from "react-toastify";
+import { showSuccessToast, showErrorToast } from "@/app/utils/toast";
 import { CreditCard, Clock, CheckCircle2, XCircle, Home, Calendar, AlertCircle, RefreshCw } from "lucide-react";
 
 interface TenantDashboardClientProps {
@@ -48,7 +49,7 @@ export default function TenantDashboardClient({ user }: TenantDashboardClientPro
         window.location.href = res.data.checkoutUrl;
       } else {
         const errorMsg = res?.message || "Failed to create payment checkout session. Server returned an error response.";
-        toast.error(errorMsg);
+        showErrorToast(errorMsg);
         setPaymentError((prev) => ({
           ...prev,
           [requestId]: errorMsg,
@@ -57,7 +58,7 @@ export default function TenantDashboardClient({ user }: TenantDashboardClientPro
       }
     } catch (err: any) {
       const errText = err.message || "An unexpected error occurred during payment setup.";
-      toast.error(errText);
+      showErrorToast(errText);
       setPaymentError((prev) => ({
         ...prev,
         [requestId]: errText,
@@ -219,47 +220,6 @@ export default function TenantDashboardClient({ user }: TenantDashboardClientPro
           </div>
         )}
       </div>
-
-      {/* Payment History Card */}
-      {!loading && requests.length > 0 && (
-        <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm space-y-4">
-          <div>
-            <h2 className="text-lg font-extrabold text-slate-900">Payment History</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Records of successful payments for your active leases</p>
-          </div>
-          {completedPayments.length === 0 ? (
-            <div className="text-center py-8 border border-dashed border-slate-100 rounded-xl text-slate-400 text-sm select-none">
-              <span className="text-3xl block mb-1">💳</span>
-              No payment transactions found.
-            </div>
-          ) : (
-            <div className="overflow-x-auto rounded-xl border border-slate-100">
-              <table className="min-w-full divide-y divide-slate-100 text-left text-sm">
-                <thead className="bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider">
-                  <tr>
-                    <th className="px-6 py-3">Property</th>
-                    <th className="px-6 py-3">Transaction ID</th>
-                    <th className="px-6 py-3">Amount</th>
-                    <th className="px-6 py-3">Provider</th>
-                    <th className="px-6 py-3">Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
-                  {completedPayments.map((req) => (
-                    <tr key={req.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-6 py-4 font-bold text-slate-800">{req.property?.title || "Property"}</td>
-                      <td className="px-6 py-4 font-mono text-xs text-slate-500">{req.payment?.transactionId || "N/A"}</td>
-                      <td className="px-6 py-4 font-extrabold text-emerald-650">৳ {req.payment?.amount?.toLocaleString()} BDT</td>
-                      <td className="px-6 py-4 text-xs font-bold text-slate-600">{req.payment?.provider || "STRIPE"}</td>
-                      <td className="px-6 py-4 text-slate-500 text-xs">{new Date(req.payment?.createdAt || req.updatedAt).toLocaleDateString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
@@ -287,7 +247,7 @@ function TenantRequestCard({
     const reviewsList = prop.reviews || [];
     return reviewsList.some((rev: any) => rev.tenant?.email === user?.email || rev.email === user?.email || rev.tenant?.name === user?.name);
   });
-  
+
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
@@ -296,21 +256,21 @@ function TenantRequestCard({
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!comment.trim()) {
-      toast.error("Please write a comment.");
+      showErrorToast("Please write a comment.");
       return;
     }
     setSubmittingReview(true);
     try {
       const res = await createReviewAction(prop.id, rating, comment);
       if (res?.success) {
-        toast.success(res.message || "Review submitted successfully!");
+        showSuccessToast(res.message || "Review submitted successfully!");
         setHasReviewed(true);
         setShowReviewForm(false);
       } else {
-        toast.error(res?.message || "Failed to submit review.");
+        showErrorToast(res?.message || "Failed to submit review.");
       }
     } catch (err: any) {
-      toast.error(err.message || "An error occurred while submitting review.");
+      showErrorToast(err.message || "An error occurred while submitting review.");
     } finally {
       setSubmittingReview(false);
     }
@@ -318,13 +278,12 @@ function TenantRequestCard({
 
   return (
     <div
-      className={`rounded-2xl border transition-all p-6 ${
-        isApproved
+      className={`rounded-2xl border transition-all p-6 ${isApproved
           ? "border-emerald-200 bg-emerald-50/10 shadow-xs"
           : isCompleted
-          ? "border-blue-100 bg-blue-50/5"
-          : "border-slate-100 bg-white"
-      }`}
+            ? "border-blue-100 bg-blue-50/5"
+            : "border-slate-100 bg-white"
+        }`}
     >
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         {/* Property info */}
@@ -433,7 +392,7 @@ function TenantRequestCard({
             ) : (
               <form onSubmit={handleReviewSubmit} className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4 max-w-lg">
                 <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Leave a Property Review</h4>
-                
+
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-slate-500 font-semibold">Rating:</span>
                   <div className="flex gap-1">

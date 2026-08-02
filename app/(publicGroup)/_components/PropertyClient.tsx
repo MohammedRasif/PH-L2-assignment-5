@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { createRentalRequestAction } from "@/app/actions/requestActions";
-import { toast } from "react-toastify";
+import { showSuccessToast, showErrorToast } from "@/app/utils/toast";
 
 interface Category {
   id: string;
@@ -90,12 +90,12 @@ export default function PropertyClient({
       if (res?.success) {
         setRequestedIds((prev) => new Set(prev).add(propertyId));
         setTenantRequestsMap((prev) => ({ ...prev, [propertyId]: "PENDING" }));
-        toast.success(res.message || `Rental request for "${propertyTitle}" submitted successfully!`);
+        showSuccessToast(res.message || `Rental request for "${propertyTitle}" submitted successfully!`);
       } else {
-        toast.error(res?.message || "Failed to submit rental request.");
+        showErrorToast(res?.message || "Failed to submit rental request.");
       }
     } catch (err: any) {
-      toast.error(err.message || "An error occurred while submitting rental request.");
+      showErrorToast(err.message || "An error occurred while submitting rental request.");
     } finally {
       setLoadingPropertyId(null);
     }

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { createRentalRequestAction, createPaymentAction, createReviewAction } from "@/app/actions/requestActions";
 import { toast } from "react-toastify";
+import { showSuccessToast, showErrorToast } from "@/app/utils/toast";
 
 interface Category {
   id: string;
@@ -83,12 +84,12 @@ export default function PropertyDetailsClient({
       const res = await createRentalRequestAction(property.id);
       if (res?.success) {
         setMatchingRequest(res.data);
-        toast.success(res.message || `Rental request submitted successfully!`);
+        showSuccessToast(res.message || `Rental request submitted successfully!`);
       } else {
-        toast.error(res?.message || "Failed to submit rental request.");
+        showErrorToast(res?.message || "Failed to submit rental request.");
       }
     } catch (err: any) {
-      toast.error(err.message || "An error occurred while submitting rental request.");
+      showErrorToast(err.message || "An error occurred while submitting rental request.");
     } finally {
       setLoadingRequest(false);
     }
@@ -103,10 +104,10 @@ export default function PropertyDetailsClient({
         toast.info("Redirecting to Stripe checkout session...");
         window.location.href = res.data.checkoutUrl;
       } else {
-        toast.error(res?.message || "Failed to create payment checkout session.");
+        showErrorToast(res?.message || "Failed to create payment checkout session.");
       }
     } catch (err: any) {
-      toast.error(err.message || "An error occurred during payment setup.");
+      showErrorToast(err.message || "An error occurred during payment setup.");
     } finally {
       setPaying(false);
     }
@@ -115,14 +116,14 @@ export default function PropertyDetailsClient({
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!comment.trim()) {
-      toast.error("Please write a comment.");
+      showErrorToast("Please write a comment.");
       return;
     }
     setSubmittingReview(true);
     try {
       const res = await createReviewAction(property.id, rating, comment);
       if (res?.success) {
-        toast.success(res.message || "Review submitted successfully!");
+        showSuccessToast(res.message || "Review submitted successfully!");
         setReviews((prev) => [
           ...prev,
           {
@@ -138,10 +139,10 @@ export default function PropertyDetailsClient({
         setComment("");
         setShowReviewForm(false);
       } else {
-        toast.error(res?.message || "Failed to submit review.");
+        showErrorToast(res?.message || "Failed to submit review.");
       }
     } catch (err: any) {
-      toast.error(err.message || "An error occurred while submitting review.");
+      showErrorToast(err.message || "An error occurred while submitting review.");
     } finally {
       setSubmittingReview(false);
     }
@@ -191,11 +192,10 @@ export default function PropertyDetailsClient({
                 {/* Availability Badge */}
                 <div className="absolute top-4 right-4 z-10">
                   <span
-                    className={`text-xs font-extrabold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-sm border ${
-                      property.isAvailable
+                    className={`text-xs font-extrabold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-sm border ${property.isAvailable
                         ? "bg-emerald-500 text-white border-emerald-400"
                         : "bg-rose-500 text-white border-rose-400"
-                    }`}
+                      }`}
                   >
                     {property.isAvailable ? "Available" : "Occupied"}
                   </span>
@@ -209,11 +209,10 @@ export default function PropertyDetailsClient({
                     <button
                       key={idx}
                       onClick={() => setActiveImage(img)}
-                      className={`h-20 w-28 rounded-xl overflow-hidden border-2 transition-all cursor-pointer hover:scale-[1.05] hover:shadow-xs active:scale-[0.98] ${
-                        activeImage === img
+                      className={`h-20 w-28 rounded-xl overflow-hidden border-2 transition-all cursor-pointer hover:scale-[1.05] hover:shadow-xs active:scale-[0.98] ${activeImage === img
                           ? "border-blue-600 shadow-xs scale-102"
                           : "border-slate-200/80"
-                      }`}
+                        }`}
                     >
                       <img src={img} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover" />
                     </button>
