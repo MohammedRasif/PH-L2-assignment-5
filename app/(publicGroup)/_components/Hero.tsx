@@ -5,7 +5,11 @@ import { Building2, ShieldCheck, CreditCard, ArrowRight } from "lucide-react";
 
 const Hero = () => {
   return (
-    <section className="relative w-full min-h-[550px] md:min-h-[640px] flex items-center overflow-hidden bg-[#F8F4ED]">
+    <section className="relative w-full min-h-[550px] md:min-h-screen
+    
+    
+    
+    flex items-center overflow-hidden bg-[#F8F4ED]">
       {/* Background building image - right side on desktop, full cover on mobile */}
       <div className="absolute inset-0 z-0">
         <Image
