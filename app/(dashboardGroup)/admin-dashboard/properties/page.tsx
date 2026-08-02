@@ -9,7 +9,6 @@ export const revalidate = 0;
 export default async function ManagePropertiesPage() {
   const user = await getMe();
   
-  // Security checks
   if (!user) {
     redirect("/login");
   }
