@@ -28,6 +28,7 @@ interface Property {
   bedrooms: number;
   bathrooms: number;
   amenities: string[];
+  images?: string[];
   isAvailable: boolean;
   category: Category;
   owner: Owner;
@@ -228,154 +229,51 @@ export default function PropertyClient({
         {/* Properties Grid */}
         {initialProperties.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {initialProperties.map((property) => (
-              <div 
-                key={property.id}
-                className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-md transition-all duration-300 group flex flex-col h-full"
-              >
-                {/* Visual Header / Mock Image Grid */}
-                <div className="h-48 relative bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center p-6 text-white overflow-hidden">
-                  <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
-                  
-                  {/* Category and Availability Badge */}
-                  <div className="absolute top-4 left-4 flex flex-col gap-2">
-                    <span className="bg-white/95 backdrop-blur-sm text-slate-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
-                      {property.category?.name || "Home"}
-                    </span>
-                    <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full tracking-wider uppercase self-start shadow-sm ${
-                      property.isAvailable 
-                        ? "bg-emerald-500 text-white" 
-                        : "bg-rose-500 text-white"
-                    }`}>
-                      {property.isAvailable ? "Available" : "Occupied"}
-                    </span>
+            {initialProperties.map((property) => {
+              const displayImage = property.images && property.images.length > 0 ? property.images[0] : null;
+              return (
+                <Link 
+                  key={property.id}
+                  href={`/property/${property.id}`}
+                  className="bg-white rounded-2xl overflow-hidden shadow-xs border border-slate-100 hover:shadow-xl hover:scale-[1.03] transition-all duration-300 ease-out cursor-pointer group flex flex-col h-full"
+                >
+                  {/* Card Image */}
+                  <div className="h-56 relative bg-slate-50 overflow-hidden select-none">
+                    {displayImage ? (
+                      <img
+                        src={displayImage}
+                        alt={property.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-slate-100 text-slate-450 group-hover:scale-105 transition-transform duration-500 ease-out">
+                        <span className="text-5xl mb-2">🏡</span>
+                        <span className="text-xs font-bold tracking-wide uppercase">No Image Available</span>
+                      </div>
+                    )}
+                    
+                    {/* Category Badge */}
+                    {property.category?.name && (
+                      <div className="absolute top-4 left-4">
+                        <span className="bg-white/95 backdrop-blur-xs text-slate-800 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider shadow-xs">
+                          {property.category.name}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  {/* Icon Representation */}
-                  <div className="transform group-hover:scale-110 transition-transform duration-300 text-center">
-                    <span className="text-7xl filter drop-shadow-md">🏡</span>
-                  </div>
-                </div>
 
-                {/* Card Body */}
-                <div className="p-6 flex flex-col flex-grow">
-                  {/* Title & Location */}
-                  <div className="mb-4">
-                   <div className="flex items-center justify-between">
-                     <div className="flex items-center gap-1 text-blue-600 text-xs font-semibold mb-1 uppercase tracking-wider">
-                      <span>📍</span> {property.location}
-                    </div>
-                    <div className="text-lg font-black tracking-tight">৳ {property.price.toLocaleString()}</div>
-
-                   </div>
-                    <h3 className="text-xl font-bold text-slate-900 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                  {/* Card Body */}
+                  <div className="p-6 flex flex-col flex-grow">
+                    <h3 className="text-xl font-bold text-slate-900 mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors">
                       {property.title}
                     </h3>
+                    <p className="text-sm text-slate-500 line-clamp-3 leading-relaxed flex-grow">
+                      {property.description}
+                    </p>
                   </div>
-
-                  {/* Description */}
-                  <p className="text-sm text-slate-500 mb-6 line-clamp-2 leading-relaxed flex-grow">
-                    {property.description}
-                  </p>
-
-                  {/* Key Specifications (Beds, Baths) */}
-                  <div className="grid grid-cols-2 gap-4 py-3 px-4 rounded-xl bg-slate-50 border border-slate-100 mb-4 text-slate-600 text-sm font-semibold">
-                    <div className="flex items-center justify-center gap-2">
-                      <span>🛏️</span> {property.bedrooms} {property.bedrooms === 1 ? "Bedroom" : "Bedrooms"}
-                    </div>
-                    <div className="flex items-center justify-center gap-2 border-l border-slate-200">
-                      <span>🚿</span> {property.bathrooms} {property.bathrooms === 1 ? "Bathroom" : "Bathrooms"}
-                    </div>
-                  </div>
-
-                  {/* Amenities List */}
-                  {property.amenities?.length > 0 && (
-                    <div className="mb-6">
-                      <div className="flex flex-wrap gap-1.5">
-                        {property.amenities.map((amenity, idx) => (
-                          <span 
-                            key={idx}
-                            className="bg-slate-100 text-slate-600 text-[10px] font-bold px-2.5 py-1 rounded-md border border-slate-200/50"
-                          >
-                            ⚡ {amenity}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Submit Rent Request or Request Status for TENANT role */}
-                  {currentUser?.role === "TENANT" && (() => {
-                    const status = tenantRequestsMap[property.id] || (requestedIds.has(property.id) ? "PENDING" : null);
-
-                    if (status === "PENDING") {
-                      return (
-                        <div className="mt-auto pt-4 border-t border-slate-100">
-                          <div className="w-full bg-amber-50 text-amber-800 border border-amber-200 font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs">
-                            <span>⏳</span> Request Pending Approval
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    if (status === "APPROVED") {
-                      return (
-                        <div className="mt-auto pt-4 border-t border-slate-100">
-                          <Link
-                            href="/rental-dashboard"
-                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.01]"
-                          >
-                            <span>🎉</span> Approved - Pay in Dashboard →
-                          </Link>
-                        </div>
-                      );
-                    }
-
-                    if (status === "COMPLETED") {
-                      return (
-                        <div className="mt-auto pt-4 border-t border-slate-100">
-                          <div className="w-full bg-blue-50 text-blue-800 border border-blue-200 font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs">
-                            <span>✓</span> Lease Active / Paid
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    if (status === "REJECTED") {
-                      return (
-                        <div className="mt-auto pt-4 border-t border-slate-100">
-                          <div className="w-full bg-rose-50 text-rose-800 border border-rose-200 font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs">
-                            <span>✕</span> Request Rejected
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div className="mt-auto pt-4 border-t border-slate-100">
-                        <button
-                          type="button"
-                          disabled={loadingPropertyId === property.id}
-                          onClick={() => handleSubmitRentRequest(property.id, property.title)}
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed hover:scale-[1.01] active:scale-[0.99]"
-                        >
-                          {loadingPropertyId === property.id ? (
-                            <>
-                              <span className="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent text-white rounded-full"></span>
-                              <span>Submitting Request...</span>
-                            </>
-                          ) : (
-                            <>
-                              <span>📩</span>
-                              <span>Submit Rent Request</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         ) : (
           <div className="bg-white border border-slate-150 rounded-2xl p-16 text-center shadow-sm">

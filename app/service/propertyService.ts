@@ -112,3 +112,19 @@ export async function deleteProperty(id: string) {
 
   return await response.json();
 }
+
+// 6. Fetch single property by ID GET {{base_url}}/api/properties/:id
+export async function getPropertyById(id: string) {
+  const baseUrl = getBaseUrl();
+  const response = await fetch(`${baseUrl}api/properties/${id}`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch property details");
+  }
+
+  const result = await response.json();
+  return result.data || null;
+}
+
