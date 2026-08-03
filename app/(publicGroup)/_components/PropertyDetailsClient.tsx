@@ -149,7 +149,7 @@ export default function PropertyDetailsClient({
   };
 
   return (
-    <div className="bg-slate-50 min-h-screen py-10 px-4 sm:px-6 lg:px-8">
+    <div className="bg-slate-50 min-h-screen py-10 px-4 sm:px-6 lg:px-8 ">
       <div className="max-w-7xl mx-auto">
         {/* Navigation & Back Link */}
         <div className="mb-8">
@@ -334,7 +334,7 @@ export default function PropertyDetailsClient({
           </div>
 
           {/* Right Column: Landlord info and Actions panel */}
-          <div className="space-y-8 lg:sticky lg:top-8">
+          <div className="space-y-8 lg:sticky lg:top-20">
             {/* Rent Pricing Card */}
             <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-xs space-y-6">
               <div>

@@ -18,7 +18,6 @@ export default async function PropertyDetailsPage({ params }: PropertyDetailsPag
   try {
     property = await getPropertyById(id);
   } catch (err) {
-    console.error(`Failed to fetch property details for ID ${id}:`, err);
   }
 
   if (!property) {
@@ -48,7 +47,6 @@ export default async function PropertyDetailsPage({ params }: PropertyDetailsPag
     try {
       initialTenantRequests = await getTenantRequests();
     } catch (err) {
-      console.error("Failed to load tenant requests for details page:", err);
     }
   }
 

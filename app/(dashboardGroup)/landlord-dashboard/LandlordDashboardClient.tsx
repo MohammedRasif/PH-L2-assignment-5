@@ -61,7 +61,6 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
   const [uploadedImageDataUrl, setUploadedImageDataUrl] = useState("");
   const [isAvailable, setIsAvailable] = useState<boolean>(true);
 
-  // 1. Fetch Landlord Properties
   const fetchMyProperties = async () => {
     setLoadingProperties(true);
     try {
@@ -90,8 +89,8 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
           setCategoryId(res.data[0].id);
         }
       }
-    } catch (err) {
-      console.error("Failed to load categories:", err);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to load categories.");
     } finally {
       setLoadingCategories(false);
     }
@@ -102,7 +101,6 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
     fetchCategories();
   }, []);
 
-  // Open Modal for NEW Property
   const handleOpenAddModal = () => {
     setEditingPropertyId(null);
     setTitle("");
@@ -122,7 +120,6 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
     setIsModalOpen(true);
   };
 
-  // Open Modal for EDIT Property
   const handleOpenEditModal = (property: any) => {
     setEditingPropertyId(property.id);
     setTitle(property.title || "");
@@ -148,7 +145,6 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
     setIsModalOpen(true);
   };
 
-  // Device File Upload Handler
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -161,7 +157,6 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
     }
   };
 
-  // Delete Property Handler with Foreign Key error handling & Toastify
   const handleDeleteProperty = async (propertyId: string, propertyTitle: string) => {
     if (!confirm(`Are you sure you want to delete property "${propertyTitle}"?`)) {
       return;
@@ -200,7 +195,6 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
     }
   };
 
-  // Submit Form (Create or Update via PUT/POST)
   const handleSaveProperty = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmittingProperty(true);
@@ -614,23 +608,7 @@ export default function LandlordDashboardClient({ user }: LandlordDashboardClien
                   </div>
 
                   {/* Option B: Device Upload */}
-                  <div>
-                    <div className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold mb-1">
-                      <ImageIcon className="w-3.5 h-3.5 text-blue-600" /> Device File Upload
-                    </div>
-                    <div className="border border-slate-200 hover:border-blue-500 rounded-xl p-2 text-center cursor-pointer transition-all bg-slate-50">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageFileChange}
-                        className="hidden"
-                        id="property-image-file"
-                      />
-                      <label htmlFor="property-image-file" className="cursor-pointer block">
-                        <span className="text-xs font-bold text-blue-600">Choose File</span>
-                      </label>
-                    </div>
-                  </div>
+                  
                 </div>
 
                 {uploadedImageDataUrl && (

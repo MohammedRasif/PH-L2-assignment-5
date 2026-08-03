@@ -1,8 +1,7 @@
-import { cookies } from "next/headers";
+import { getValidAccessToken } from "./refreshToken";
 
 async function getAdminHeader() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("accessToken")?.value;
+  const token = await getValidAccessToken();
   return {
     Authorization: token || "",
     "Content-Type": "application/json",
@@ -16,7 +15,7 @@ export async function getAdminUsers() {
 
   const response = await fetch(url, {
     headers,
-    cache: "no-store", // Always fetch fresh user data
+    cache: "no-store", 
   });
 
   if (!response.ok) {
@@ -34,7 +33,7 @@ export async function getAdminProperties() {
 
   const response = await fetch(url, {
     headers,
-    cache: "no-store", // Always fetch fresh properties list
+    cache: "no-store", 
   });
 
   if (!response.ok) {
@@ -52,7 +51,7 @@ export async function getAdminRentals() {
 
   const response = await fetch(url, {
     headers,
-    cache: "no-store", // Always fetch fresh rental requests list
+    cache: "no-store", 
   });
 
   if (!response.ok) {

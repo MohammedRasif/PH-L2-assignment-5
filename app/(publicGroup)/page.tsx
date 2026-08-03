@@ -10,7 +10,6 @@ export default async function HomePage() {
   try {
     properties = await getProperties();
   } catch (err) {
-    console.error("Error fetching properties for homepage:", err);
   }
 
   const featuredProperties = properties.slice(0, 6);
@@ -86,8 +85,9 @@ export default async function HomePage() {
                       <h3 className="text-lg font-bold text-slate-900 group-hover:text-emerald-800 transition-colors line-clamp-1">
                         {prop.title}
                       </h3>
-                      <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
-                        {prop.description}
+                      <p className="text-xs text-slate-600 font-semibold flex items-center gap-1.5">
+                        <span>📍</span>
+                        <span className="truncate">{prop.location}</span>
                       </p>
                     </div>
                   </div>

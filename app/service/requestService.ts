@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { getValidAccessToken, tryRefreshToken } from "./refreshToken";
 
 const getBaseUrl = () => {
   const url = process.env.BACKEND_API_URL || "";
@@ -6,8 +6,7 @@ const getBaseUrl = () => {
 };
 
 async function getAuthHeaders() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("accessToken")?.value;
+  const token = await getValidAccessToken();
   return {
     Authorization: token || "",
     "Content-Type": "application/json",
@@ -27,16 +26,27 @@ async function safeJsonResponse(response: Response) {
   }
 }
 
-// 1. Submit Rental Request (Tenant)
 export async function createRentalRequest(propertyId: string) {
   const baseUrl = getBaseUrl();
-  const headers = await getAuthHeaders();
+  let headers = await getAuthHeaders();
 
-  const response = await fetch(`${baseUrl}api/requests`, {
+  let response = await fetch(`${baseUrl}api/requests`, {
     method: "POST",
     headers,
     body: JSON.stringify({ propertyId }),
   });
+
+  if (response.status === 401 || response.status === 403) {
+    const newToken = await tryRefreshToken();
+    if (newToken) {
+      headers = { ...headers, Authorization: newToken };
+      response = await fetch(`${baseUrl}api/requests`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ propertyId }),
+      });
+    }
+  }
 
   return await safeJsonResponse(response);
 }
@@ -44,13 +54,25 @@ export async function createRentalRequest(propertyId: string) {
 // 2. Fetch Tenant Rental Requests
 export async function getTenantRequests() {
   const baseUrl = getBaseUrl();
-  const headers = await getAuthHeaders();
+  let headers = await getAuthHeaders();
 
-  const response = await fetch(`${baseUrl}api/requests`, {
+  let response = await fetch(`${baseUrl}api/requests`, {
     method: "GET",
     headers,
     cache: "no-store",
   });
+
+  if (response.status === 401 || response.status === 403) {
+    const newToken = await tryRefreshToken();
+    if (newToken) {
+      headers = { ...headers, Authorization: newToken };
+      response = await fetch(`${baseUrl}api/requests`, {
+        method: "GET",
+        headers,
+        cache: "no-store",
+      });
+    }
+  }
 
   if (!response.ok) {
     throw new Error("Failed to fetch tenant rental requests");
@@ -63,13 +85,25 @@ export async function getTenantRequests() {
 // 3. Fetch Landlord Rental Requests
 export async function getLandlordRequests() {
   const baseUrl = getBaseUrl();
-  const headers = await getAuthHeaders();
+  let headers = await getAuthHeaders();
 
-  const response = await fetch(`${baseUrl}api/requests/landlord/all`, {
+  let response = await fetch(`${baseUrl}api/requests/landlord/all`, {
     method: "GET",
     headers,
     cache: "no-store",
   });
+
+  if (response.status === 401 || response.status === 403) {
+    const newToken = await tryRefreshToken();
+    if (newToken) {
+      headers = { ...headers, Authorization: newToken };
+      response = await fetch(`${baseUrl}api/requests/landlord/all`, {
+        method: "GET",
+        headers,
+        cache: "no-store",
+      });
+    }
+  }
 
   if (!response.ok) {
     throw new Error("Failed to fetch landlord rental requests");
@@ -79,16 +113,27 @@ export async function getLandlordRequests() {
   return result.data || [];
 }
 
-// 4. Update Landlord Request Status (APPROVED or REJECTED)
 export async function updateLandlordRequestStatus(requestId: string, status: "APPROVED" | "REJECTED") {
   const baseUrl = getBaseUrl();
-  const headers = await getAuthHeaders();
+  let headers = await getAuthHeaders();
 
   let response = await fetch(`${baseUrl}api/requests/landlord/${requestId}`, {
     method: "PATCH",
     headers,
     body: JSON.stringify({ status }),
   });
+
+  if (response.status === 401 || response.status === 403) {
+    const newToken = await tryRefreshToken();
+    if (newToken) {
+      headers = { ...headers, Authorization: newToken };
+      response = await fetch(`${baseUrl}api/requests/landlord/${requestId}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ status }),
+      });
+    }
+  }
 
   if (response.status === 405) {
     response = await fetch(`${baseUrl}api/requests/landlord/${requestId}`, {
@@ -104,13 +149,25 @@ export async function updateLandlordRequestStatus(requestId: string, status: "AP
 // 5. Create Payment Intent (Tenant)
 export async function createPayment(rentalRequestId: string, provider = "STRIPE") {
   const baseUrl = getBaseUrl();
-  const headers = await getAuthHeaders();
+  let headers = await getAuthHeaders();
 
   let response = await fetch(`${baseUrl}api/payments/create`, {
     method: "POST",
     headers,
     body: JSON.stringify({ rentalRequestId, provider }),
   });
+
+  if (response.status === 401 || response.status === 403) {
+    const newToken = await tryRefreshToken();
+    if (newToken) {
+      headers = { ...headers, Authorization: newToken };
+      response = await fetch(`${baseUrl}api/payments/create`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ rentalRequestId, provider }),
+      });
+    }
+  }
 
   // Try fallback endpoint if 404
   if (response.status === 404) {
@@ -124,7 +181,6 @@ export async function createPayment(rentalRequestId: string, provider = "STRIPE"
   return await safeJsonResponse(response);
 }
 
-// 6. Create Review POST {{base_url}}/api/reviews
 export async function createReview(propertyId: string, rating: number, comment: string) {
   const baseUrl = getBaseUrl();
   const headers = await getAuthHeaders();

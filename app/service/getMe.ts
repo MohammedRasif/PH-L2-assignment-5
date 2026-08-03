@@ -1,23 +1,36 @@
-import { cookies } from "next/headers";
+import { getValidAccessToken, tryRefreshToken } from "./refreshToken";
 
 export async function getMe() {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("accessToken")?.value;
+    let token = await getValidAccessToken();
 
     if (!token) {
       return null;
     }
 
     const baseUrl = process.env.BACKEND_API_URL || "";
-    console.log(baseUrl,"kkkk")
     const normalizedUrl = baseUrl.endsWith("/") ? `${baseUrl}api/users/me` : `${baseUrl}/api/users/me`;
-    const response = await fetch(normalizedUrl, {
+
+    let response = await fetch(normalizedUrl, {
       headers: {
         Authorization: token,
       },
       next: { revalidate: 0 } // Disable caching to get fresh profile data
     });
+
+    // Retry if unauthorized / expired
+    if (response.status === 401 || response.status === 403) {
+      token = await tryRefreshToken();
+      if (!token) {
+        return null;
+      }
+      response = await fetch(normalizedUrl, {
+        headers: {
+          Authorization: token,
+        },
+        next: { revalidate: 0 }
+      });
+    }
 
     if (!response.ok) {
       return null;
@@ -29,7 +42,6 @@ export async function getMe() {
     }
     return null;
   } catch (error) {
-    console.error("Error in getMe service:", error);
     return null;
   }
 }

@@ -57,9 +57,7 @@ export default function PropertyClient({
   const router = useRouter();
   const pathname = usePathname();
 
-  // Console log property details as requested by user
   useEffect(() => {
-    console.log("property details", initialProperties);
   }, [initialProperties]);
 
   // Search & Filter Input States initialized from active URL filters
@@ -262,13 +260,24 @@ export default function PropertyClient({
                   </div>
 
                   {/* Card Body */}
-                  <div className="p-6 flex flex-col flex-grow">
-                    <h3 className="text-xl font-bold text-slate-900 mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                  <div className="p-5 flex flex-col justify-between flex-grow space-y-3">
+                    <h3 className="text-lg font-bold text-slate-900 line-clamp-1 group-hover:text-blue-600 transition-colors">
                       {property.title}
                     </h3>
-                    <p className="text-sm text-slate-500 line-clamp-3 leading-relaxed flex-grow">
-                      {property.description}
-                    </p>
+
+                    <div className="flex items-center gap-1.5 text-xs text-slate-600 font-semibold">
+                      <span>📍</span>
+                      <span className="truncate">{property.location}</span>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between mt-auto">
+                      <span className="text-base font-extrabold text-blue-600">
+                        ৳ {property.price?.toLocaleString()} <span className="text-xs text-slate-400 font-normal">/ mo</span>
+                      </span>
+                      <span className="text-xs font-bold text-blue-600 group-hover:translate-x-1 transition-transform">
+                        View Details →
+                      </span>
+                    </div>
                   </div>
                 </Link>
               );

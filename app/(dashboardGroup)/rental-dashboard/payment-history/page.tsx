@@ -2,6 +2,7 @@ import React from "react";
 import { getMe } from "@/app/service/getMe";
 import { redirect } from "next/navigation";
 import { getTenantRequests } from "@/app/service/requestService";
+import { toast } from "react-toastify";
 
 export const dynamic = "force-dynamic";
 
@@ -19,8 +20,8 @@ export default async function TenantPaymentHistoryPage() {
   let requests: any[] = [];
   try {
     requests = await getTenantRequests();
-  } catch (err) {
-    console.error("Failed to load requests in payment history page:", err);
+  } catch (err ) {
+    
   }
 
   const completedPayments = requests.filter((r) => r.status === "COMPLETED" && r.payment);

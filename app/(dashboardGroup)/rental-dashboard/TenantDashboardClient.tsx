@@ -15,7 +15,6 @@ export default function TenantDashboardClient({ user }: TenantDashboardClientPro
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [payingRequestId, setPayingRequestId] = useState<string | null>(null);
-  const [paymentError, setPaymentError] = useState<{ [id: string]: string }>({});
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -40,7 +39,6 @@ export default function TenantDashboardClient({ user }: TenantDashboardClientPro
 
   const handlePay = async (requestId: string) => {
     setPayingRequestId(requestId);
-    setPaymentError((prev) => ({ ...prev, [requestId]: "" }));
 
     try {
       const res = await createPaymentAction(requestId, "STRIPE");
@@ -50,19 +48,11 @@ export default function TenantDashboardClient({ user }: TenantDashboardClientPro
       } else {
         const errorMsg = res?.message || "Failed to create payment checkout session. Server returned an error response.";
         showErrorToast(errorMsg);
-        setPaymentError((prev) => ({
-          ...prev,
-          [requestId]: errorMsg,
-        }));
         setPayingRequestId(null);
       }
     } catch (err: any) {
       const errText = err.message || "An unexpected error occurred during payment setup.";
       showErrorToast(errText);
-      setPaymentError((prev) => ({
-        ...prev,
-        [requestId]: errText,
-      }));
       setPayingRequestId(null);
     }
   };
@@ -212,7 +202,6 @@ export default function TenantDashboardClient({ user }: TenantDashboardClientPro
                 req={req}
                 user={user}
                 payingRequestId={payingRequestId}
-                paymentError={paymentError}
                 handlePay={handlePay}
                 getStatusBadge={getStatusBadge}
               />
@@ -228,14 +217,12 @@ function TenantRequestCard({
   req,
   user,
   payingRequestId,
-  paymentError,
   handlePay,
   getStatusBadge,
 }: {
   req: any;
   user: any;
   payingRequestId: string | null;
-  paymentError: { [id: string]: string };
   handlePay: (requestId: string) => void;
   getStatusBadge: (status: string) => React.ReactNode;
 }) {
@@ -353,12 +340,6 @@ function TenantRequestCard({
               </p>
             </div>
           </div>
-        </div>
-      )}
-
-      {paymentError[req.id] && (
-        <div className="mt-3 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-semibold">
-          ⚠️ {paymentError[req.id]}
         </div>
       )}
 

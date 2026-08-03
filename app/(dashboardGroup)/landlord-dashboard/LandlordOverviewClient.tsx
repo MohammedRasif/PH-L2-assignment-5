@@ -44,7 +44,6 @@ export default function LandlordOverviewClient({ user }: LandlordOverviewClientP
         setRequests(reqsRes.data);
       }
     } catch (err) {
-      console.error("Error loading landlord overview data:", err);
     } finally {
       setLoading(false);
     }
@@ -59,10 +58,15 @@ export default function LandlordOverviewClient({ user }: LandlordOverviewClientP
   const activeRequests = requests.filter((r) => r.status === "PENDING" || r.status === "APPROVED").length;
   const pendingRequests = requests.filter((r) => r.status === "PENDING").length;
 
-  // Calculate Total Earnings from completed rental payments
   const totalEarnings = requests.reduce((sum, req) => {
-    if (req.payment && req.payment.status === "COMPLETED") {
-      return sum + (req.payment.amount || 0);
+    const isCompleted =
+      req.status === "COMPLETED" ||
+      req.paymentStatus === "COMPLETED" ||
+      req.payment?.status === "COMPLETED";
+
+    if (isCompleted) {
+      const amount = req.payment?.amount || req.amount || req.property?.price || 0;
+      return sum + Number(amount);
     }
     return sum;
   }, 0);
@@ -80,14 +84,7 @@ export default function LandlordOverviewClient({ user }: LandlordOverviewClientP
           </p>
         </div>
 
-        <button
-          onClick={loadOverviewData}
-          disabled={loading}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50 self-start md:self-auto"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-          <span>Refresh Data</span>
-        </button>
+        
       </div>
 
       {/* Primary Overview Stats Grid (Properties, Active Requests, Earnings) */}

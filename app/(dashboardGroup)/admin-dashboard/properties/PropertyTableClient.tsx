@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { getAdminPropertiesAction } from "../_actions/adminActions";
-import { Search, MapPin } from "lucide-react";
+import { Search, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Category {
   id: string;
@@ -35,6 +35,10 @@ export default function PropertyTableClient() {
   const [searchTerm, setSearchTerm] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
+  // Pagination state (5 items per page)
+  const ITEMS_PER_PAGE = 5;
+  const [currentPage, setCurrentPage] = useState(1);
+
   useEffect(() => {
     async function loadProperties() {
       setIsLoading(true);
@@ -55,11 +59,22 @@ export default function PropertyTableClient() {
     loadProperties();
   }, []);
 
+  // Reset to page 1 on search
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
   const filteredProperties = properties.filter((p) =>
     p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.owner?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.category?.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredProperties.length / ITEMS_PER_PAGE) || 1;
+  const paginatedProperties = filteredProperties.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
   );
 
   return (
@@ -99,8 +114,8 @@ export default function PropertyTableClient() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
-                {filteredProperties.length > 0 ? (
-                  filteredProperties.map((property) => (
+                {paginatedProperties.length > 0 ? (
+                  paginatedProperties.map((property) => (
                     <tr key={property.id} className="hover:bg-slate-50/50 transition-colors">
                       {/* Title */}
                       <td className="py-4 px-6">
@@ -172,6 +187,50 @@ export default function PropertyTableClient() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Footer */}
+          {filteredProperties.length > 0 && (
+            <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-semibold text-slate-600">
+              <div>
+                Showing <span className="font-extrabold text-slate-900">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to{" "}
+                <span className="font-extrabold text-slate-900">{Math.min(currentPage * ITEMS_PER_PAGE, filteredProperties.length)}</span> of{" "}
+                <span className="font-extrabold text-slate-900">{filteredProperties.length}</span> properties
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all flex items-center gap-1"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" /> Previous
+                </button>
+
+                <div className="flex items-center gap-1 px-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`h-7 w-7 rounded-lg font-bold text-xs transition-all cursor-pointer ${
+                        currentPage === page
+                          ? "bg-blue-600 text-white shadow-xs"
+                          : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all flex items-center gap-1"
+                >
+                  Next <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

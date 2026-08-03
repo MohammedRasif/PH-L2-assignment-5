@@ -59,7 +59,6 @@ function Navbar({ user }: NavbarProps) {
             </Link>
           </div>
 
-          {/* Desktop Navigation & Actions */}
           <div className="hidden md:flex items-center gap-6">
             <Link
               href="/property"

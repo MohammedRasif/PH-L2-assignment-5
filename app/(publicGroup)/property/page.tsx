@@ -34,15 +34,12 @@ export default async function PropertyPage({ searchParams }: PropertyPageProps) 
   // Fetch properties from backend API using fetch
   const properties = await getProperties(filters);
 
-  // Console log property details as requested
-  console.log("property details", properties);
 
   let initialTenantRequests: any[] = [];
   if (user?.role === "TENANT") {
     try {
       initialTenantRequests = await getTenantRequests();
     } catch (err) {
-      console.error("Failed to load tenant requests for property page:", err);
     }
   }
 

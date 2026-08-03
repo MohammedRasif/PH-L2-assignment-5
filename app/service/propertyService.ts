@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { getValidAccessToken } from "./refreshToken";
 
 export interface PropertyFilters {
   location?: string;
@@ -16,8 +16,7 @@ const getBaseUrl = () => {
 };
 
 async function getAuthHeaders() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("accessToken")?.value;
+  const token = await getValidAccessToken();
   return {
     Authorization: token || "",
     "Content-Type": "application/json",
@@ -57,7 +56,6 @@ export async function getProperties(filters: PropertyFilters = {}) {
   return result.data || [];
 }
 
-// 2. Fetch categories from GET {{base_url}}/api/categories
 export async function getCategories() {
   const baseUrl = getBaseUrl();
   const response = await fetch(`${baseUrl}api/categories`, {
@@ -72,7 +70,6 @@ export async function getCategories() {
   return result.data || [];
 }
 
-// 3. Create a new property POST {{base_url}}/api/properties
 export async function createProperty(propertyData: any) {
   const baseUrl = getBaseUrl();
   const headers = await getAuthHeaders();
@@ -86,7 +83,6 @@ export async function createProperty(propertyData: any) {
   return await response.json();
 }
 
-// 4. Update property PUT {{base_url}}/api/properties/:id
 export async function updateProperty(id: string, propertyData: any) {
   const baseUrl = getBaseUrl();
   const headers = await getAuthHeaders();
@@ -100,7 +96,6 @@ export async function updateProperty(id: string, propertyData: any) {
   return await response.json();
 }
 
-// 5. Delete property DELETE {{base_url}}/api/properties/:id
 export async function deleteProperty(id: string) {
   const baseUrl = getBaseUrl();
   const headers = await getAuthHeaders();
@@ -113,7 +108,6 @@ export async function deleteProperty(id: string) {
   return await response.json();
 }
 
-// 6. Fetch single property by ID GET {{base_url}}/api/properties/:id
 export async function getPropertyById(id: string) {
   const baseUrl = getBaseUrl();
   const response = await fetch(`${baseUrl}api/properties/${id}`, {

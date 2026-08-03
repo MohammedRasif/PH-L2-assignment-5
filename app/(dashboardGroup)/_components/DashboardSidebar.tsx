@@ -16,9 +16,11 @@ import {
   ArrowLeft,
   Menu,
   X,
+  Tags,
 } from "lucide-react";
 import { logout } from "@/app/service/logout";
 import Image from "next/image";
+import Cookies from "js-cookie";
 
 interface SidebarProps {
   user?: any;
@@ -41,6 +43,7 @@ export default function DashboardSidebar({ user }: SidebarProps) {
           { name: "Manage Users", href: "/admin-dashboard/users", icon: Users },
           { name: "Manage Properties", href: "/admin-dashboard/properties", icon: Building2 },
           { name: "Manage Rentals", href: "/admin-dashboard/rentals", icon: FileText },
+          { name: "Property Category", href: "/admin-dashboard/categories", icon: Tags },
         ];
       case "LANDLORD":
         return [
@@ -61,8 +64,11 @@ export default function DashboardSidebar({ user }: SidebarProps) {
 
   const handleLogout = () => {
     startTransition(async () => {
+      Cookies.remove("accessToken");
       await logout();
       router.push("/login");
+      
+
     });
   };
 

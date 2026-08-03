@@ -1,6 +1,7 @@
 import { SidebarProvider } from "@/app/components/ui/sidebar";
 import { getMe } from "@/app/service/getMe";
 import DashboardSidebar from "./_components/DashboardSidebar";
+import { redirect } from "next/navigation";
 
 const DashboardLayout = async ({
   children
@@ -8,6 +9,11 @@ const DashboardLayout = async ({
   children: React.ReactNode
 }) => {
   const user = await getMe();
+
+  if (!user) {
+    redirect("/login");
+  }
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50">
       <SidebarProvider>

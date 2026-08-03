@@ -9,7 +9,6 @@ export async function logout() {
     cookieStore.delete("refreshToken");
     return { success: true };
   } catch (error) {
-    console.error("Error in logout:", error);
     return { success: false };
   }
 }
